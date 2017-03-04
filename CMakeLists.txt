@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.8)
+project( threshTest )
+find_package( OpenCV REQUIRED )
+set(CMAKE_BUILD_TYPE "None")
+set(CMAKE_CXX_FLAGS "-std=c++11 -Werror -pedantic -g")
+add_executable( threshTest testThresh.cpp )
+target_link_libraries( threshTest ${OpenCV_LIBS} )

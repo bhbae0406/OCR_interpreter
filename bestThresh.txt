@@ -1,0 +1,2 @@
+heightThresh = 410
+widthCharThresh = 289

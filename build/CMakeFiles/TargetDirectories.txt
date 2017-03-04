@@ -1,0 +1,3 @@
+/home/jdominic/ProQuest/XML_To_Image/build/CMakeFiles/edit_cache.dir
+/home/jdominic/ProQuest/XML_To_Image/build/CMakeFiles/rebuild_cache.dir
+/home/jdominic/ProQuest/XML_To_Image/build/CMakeFiles/xmlImage.dir
