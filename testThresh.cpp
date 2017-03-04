@@ -25,6 +25,7 @@ int heightThresh = 0;
 int numThresh = 0;
 int blockThresh = 0;
 int widthCharRatio = 0;
+int widthWordRatio = 0;
 int distThresh = 0;
 int charArea = 0;
 
@@ -37,11 +38,13 @@ Mat blank(Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
 
 rapidxml::xml_node<>* first_textblock;
 
-double getWidthCharRatio(rapidxml::xml_node<>* textLine)
+double getWidthCharRatio(rapidxml::xml_node<>* textLine, bool countWord)
 {
    string text;
    int charCount = 0;
    double width = 0;
+
+   int wordCount = 0;
 
    for (xml_node<>* word = textLine->first_node("String"); word != 0;
          word = word->next_sibling("String"))
@@ -49,13 +52,17 @@ double getWidthCharRatio(rapidxml::xml_node<>* textLine)
       text = word->first_attribute("CONTENT")->value();
       width += atof(word->first_attribute("WIDTH")->value());
       charCount += text.length();
+      wordCount += 1;
    }
 
    //double width = atoi(textLine->first_attribute("WIDTH")->value());
 
    width = Xdimension * (width / (double)pageWidth);
 
-   return (width / charCount);
+   if (countWord)
+      return (width / wordCount);
+   else
+      return (width / charCount);
 }
 
 double getObjectHeight(rapidxml::xml_node<>* block)
@@ -197,6 +204,22 @@ double distNextFour(rapidxml::xml_node<>* textLine)
    return dist;
 }
 
+/*
+bool distSecond(rapidxml::xml_node<>* textLine)
+{
+   double curLoc = getVPOS(textLine) + getObjectHeight(textLine);
+   double nextLoc = curLoc;
+
+   rapidxml::xml_node<>* tempLine = NULL;
+
+   if ((tempLine = (textLine->next_sibling("TextLine"))) != NULL)
+   {
+      nextLoc = getVPOS(tempLine);
+   }
+
+   if (
+
+*/
 
 double charAreaRatio(rapidxml::xml_node<>* textLine)
 {
@@ -229,16 +252,19 @@ double charAreaRatio(rapidxml::xml_node<>* textLine)
 }
 
 
-//void displayImage(int, void*)
-void displayImage()
+void displayImage(int, void*)
+//void displayImage()
 {
    //double min = 1000.0;
    //double max = 0.0;
    //double ratio = 0.0;
    double tempRatio = 0.0;
+   double tempWordRatio = 0.0;
    double tempHeight = 0.0;
    double tempDist = 0.0;
    double tempCA = 0.0;
+
+   double temp = 0.0;
 
    int numLine = 0;
    
@@ -248,7 +274,7 @@ void displayImage()
    double dist1 = 0.0;
    double dist2 = 0.0;
 
-   double gMaxDist = 0.0;
+   double gMaxDist = -1.0; 
    double gMinDist = 1000000.0; 
 
    double maxDist = 0.0;
@@ -284,20 +310,22 @@ void displayImage()
          //check next 4 lines
          dist2 = distNextFour(textLine);
 
+         
          if (dist1 < dist2) 
             maxDist = dist1;
          else
             maxDist = dist2;
-
+         
          cArea = charAreaRatio(textLine);
+         temp = getWidthCharRatio(textLine, true);
 
-         if (cArea > gMaxDist)
+         if (temp > gMaxDist)
          {
-            gMaxDist = cArea;
+            gMaxDist = temp;
          }
-         if (cArea < gMinDist)
+         if (temp < gMinDist)
          {
-            gMinDist = cArea;
+            gMinDist = temp;
          }
          
          //distThresh = 2734;
@@ -307,7 +335,9 @@ void displayImage()
          //widthCharRatio = 341;
          tempRatio = widthCharRatio / (double)10;
          tempRatio += 1.64348; //so min is 1.64348
-         
+
+         tempWordRatio = widthWordRatio / (double)10;
+         tempWordRatio += 60.0;
 
          heightThresh = 444;
          tempHeight = heightThresh / (double)10;
@@ -347,9 +377,13 @@ void displayImage()
          {
             //if ((maxDist >= tempDist) && ((cArea > tempCA) || 
              //        getWidthCharRatio(textLine) > tempRatio))
-            if (capLine(textLine, false) || (cArea > tempCA))
+            if (capLine(textLine, false) && (cArea > tempCA))
             {
-               if (maxDist >= tempDist)
+               if ((maxDist >= tempDist))// || 
+                  /*
+                  (getWidthCharRatio(textLine, false) > tempRatio) || 
+                     (getWidthCharRatio(textLine, true) > tempWordRatio))
+                     */
                //if (capLine(textLine, false))
                   drawBlock(textLine, Scalar(0,0,255));
                else
@@ -371,18 +405,20 @@ void displayImage()
       }
    }
 
-   /*
+   
    cout << "Max Dist: " << gMaxDist << '\n';
    cout << "Min Dist: " << gMinDist << '\n';
-   */
+   
 
+   /*
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(95);
    
    imwrite("segImage.jpg", blank, compression_params);
+   */
 
-   //imshow("Threshold Result", blank);
+   imshow("Threshold Result", blank);
 }
 
 /*
@@ -511,7 +547,7 @@ int main(int argc, char* argv[])
    namedWindow("Threshold Result", WINDOW_NORMAL);
    
    
-   /*
+   
    createTrackbar("heightThresh", "Threshold Result", &heightThresh, 3071,
          displayImage);
 
@@ -519,26 +555,22 @@ int main(int argc, char* argv[])
    createTrackbar("widthChar", "Threshold Result", &widthCharRatio, 3019,
          displayImage);
    
-
+   createTrackbar("widthWord", "Threshold Result", &widthWordRatio, 19960,
+         displayImage);
    
    createTrackbar("distThresh", "Threshold Result", &distThresh, 9100,
          displayImage);
 
    createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
-   */
-   
-  
-   
-   
    
    /*
    createTrackbar("BlockHeight", "Threshold Result", &blockThresh, 7164,
          displayBlock);
    */
 
-   //displayImage(0,0);
-   displayImage();
-  // waitKey();
+   displayImage(0,0);
+   //displayImage();
+   waitKey();
 
    return 0;
 }
