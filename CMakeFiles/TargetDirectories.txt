@@ -1,3 +1,0 @@
-/home/jdominic/ProQuest/XML_To_Image/CMakeFiles/edit_cache.dir
-/home/jdominic/ProQuest/XML_To_Image/CMakeFiles/rebuild_cache.dir
-/home/jdominic/ProQuest/XML_To_Image/CMakeFiles/threshTest.dir
