@@ -229,7 +229,8 @@ double charAreaRatio(rapidxml::xml_node<>* textLine)
 }
 
 
-void displayImage(int, void*)
+//void displayImage(int, void*)
+void displayImage()
 {
    //double min = 1000.0;
    //double max = 0.0;
@@ -300,19 +301,19 @@ void displayImage(int, void*)
          }
          
          //distThresh = 2734;
-         //distThresh = 2698;
+         distThresh = 2698;
          tempDist = distThresh / (double)10;
 
-         //widthCharRatio = 341
+         //widthCharRatio = 341;
          tempRatio = widthCharRatio / (double)10;
          tempRatio += 1.64348; //so min is 1.64348
          
 
-         //heightThresh = 444;
+         heightThresh = 444;
          tempHeight = heightThresh / (double)10;
          tempHeight += 11.9618;
 
-         //charArea = 5561;
+         charArea = 5561;
          tempCA = charArea / (double)10;
          tempCA += 315;
 
@@ -344,12 +345,12 @@ void displayImage(int, void*)
 
          else
          {
-            if ((maxDist >= tempDist) && ((cArea > tempCA) || 
-                     getWidthCharRatio(textLine) > tempRatio))
-            //if (capLine(textLine, false) && (cArea > tempCA))
+            //if ((maxDist >= tempDist) && ((cArea > tempCA) || 
+             //        getWidthCharRatio(textLine) > tempRatio))
+            if (capLine(textLine, false) || (cArea > tempCA))
             {
-               //if (maxDist >= tempDist)
-               if (capLine(textLine, false))
+               if (maxDist >= tempDist)
+               //if (capLine(textLine, false))
                   drawBlock(textLine, Scalar(0,0,255));
                else
                   drawBlock(textLine, Scalar(255,0,0));
@@ -375,7 +376,13 @@ void displayImage(int, void*)
    cout << "Min Dist: " << gMinDist << '\n';
    */
 
-   imshow("Threshold Result", blank);
+   vector<int> compression_params;
+   compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+   compression_params.push_back(95);
+   
+   imwrite("segImage.jpg", blank, compression_params);
+
+   //imshow("Threshold Result", blank);
 }
 
 /*
@@ -502,9 +509,9 @@ int main(int argc, char* argv[])
    //Mat blank(Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
 
    namedWindow("Threshold Result", WINDOW_NORMAL);
-
    
    
+   /*
    createTrackbar("heightThresh", "Threshold Result", &heightThresh, 3071,
          displayImage);
 
@@ -518,6 +525,9 @@ int main(int argc, char* argv[])
          displayImage);
 
    createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
+   */
+   
+  
    
    
    
@@ -526,8 +536,9 @@ int main(int argc, char* argv[])
          displayBlock);
    */
 
-   displayImage(0,0);
-   waitKey();
+   //displayImage(0,0);
+   displayImage();
+  // waitKey();
 
    return 0;
 }
