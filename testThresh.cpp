@@ -150,7 +150,7 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
       //account for those nuances when a word in a title is hypenated,
       //the second word in the hyphen is lower-cased and regarded as a separate
       //word
-      if ((((double)numCap)/numChar) > 0.3)
+      if ((((double)numCap)/numChar) > 0.7)
          return true;
       else
          return false;
@@ -251,9 +251,30 @@ double charAreaRatio(rapidxml::xml_node<>* textLine)
    return ratio[midIdx];
 }
 
+bool isLine(rapidxml::xml_node<>* textLine, String key, int numWords)
+{
+   String text;
+   int wordCount = 0;
+   bool found = false;
+   
+   for (rapidxml::xml_node<>* word = textLine->first_node("String"); word != 0;
+         word = word->next_sibling("String"))
+   {
+      wordCount++;
+      text = word->first_attribute("CONTENT")->value();
+
+      if (text.compare(key))
+         found = true;
+   }
+   
+   if (found && (wordCount == numWords))
+      return true;
+   else
+      return false;
+}
 
 void displayImage(int, void*)
-//void displayImage()
+//void displayImage(int heightVal)
 {
    //double min = 1000.0;
    //double max = 0.0;
@@ -339,6 +360,8 @@ void displayImage(int, void*)
          tempWordRatio = widthWordRatio / (double)10;
          tempWordRatio += 60.0;
 
+         //heightThresh = heightVal;
+
          heightThresh = 444;
          tempHeight = heightThresh / (double)10;
          tempHeight += 11.9618;
@@ -370,6 +393,10 @@ void displayImage(int, void*)
                (capLine(textLine, true))))
 
          {
+            /*
+            if (isLine(textLine, "Sciililor", 3))
+               cout << "Reached!!!" << '\n';
+            */
             drawBlock(textLine, Scalar(0,0,255));
          }
 
@@ -409,7 +436,6 @@ void displayImage(int, void*)
    cout << "Max Dist: " << gMaxDist << '\n';
    cout << "Min Dist: " << gMinDist << '\n';
    
-
    /*
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
@@ -417,6 +443,7 @@ void displayImage(int, void*)
    
    imwrite("segImage.jpg", blank, compression_params);
    */
+   
 
    imshow("Threshold Result", blank);
 }
@@ -547,7 +574,6 @@ int main(int argc, char* argv[])
    namedWindow("Threshold Result", WINDOW_NORMAL);
    
    
-   
    createTrackbar("heightThresh", "Threshold Result", &heightThresh, 3071,
          displayImage);
 
@@ -560,16 +586,20 @@ int main(int argc, char* argv[])
    
    createTrackbar("distThresh", "Threshold Result", &distThresh, 9100,
          displayImage);
-
    createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
    
-   /*
-   createTrackbar("BlockHeight", "Threshold Result", &blockThresh, 7164,
-         displayBlock);
-   */
+  
+   
+   //createTrackbar("BlockHeight", "Threshold Result", &blockThresh, 7164, displayBlock);
+   
 
    displayImage(0,0);
-   //displayImage();
+   /*
+   for (int i = 444; i > 400; i--)
+   {
+      displayImage(i);
+   }
+   */
    waitKey();
 
    return 0;
