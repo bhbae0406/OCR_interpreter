@@ -28,6 +28,7 @@ int widthCharRatio = 0;
 int widthWordRatio = 0;
 int distThresh = 0;
 int charArea = 0;
+int distAbove = 0;
 
 int pageWidth = 19268;
 int pageHeight = 28892;
@@ -107,11 +108,35 @@ double getHPOS(rapidxml::xml_node<>* block) {
    return (Ydimension * (Vpos/(double)pageHeight));
 }
 
+bool isLine(rapidxml::xml_node<>* textLine, String key, int numWords)
+{
+   String text;
+   int wordCount = 0;
+   bool found = false;
+   
+   for (rapidxml::xml_node<>* word = textLine->first_node("String"); word != 0;
+         word = word->next_sibling("String"))
+   {
+      wordCount++;
+      text = word->first_attribute("CONTENT")->value();
+
+      if (!(text.compare(key)))
+         found = true;
+   }
+   
+   if (found && (wordCount == numWords))
+      return true;
+   else
+      return false;
+}
+
 
 bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
 {
    int numChar = 0;
    int numCap = 0;
+
+   int numFirstCap = 0;
 
    bool cap = true;
 
@@ -122,13 +147,19 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
    for (rapidxml::xml_node<>* word = textLine->first_node("String"); word != 0;
          word = word->next_sibling("String"))
    {
-      numWord++;
+      if (isalpha(text[0]))
+      {
+         numWord++;
+      }
 
       text = word->first_attribute("CONTENT")->value();
       
       
-      if (isalpha(text[0]) && !(isupper(text[0])) && (text.length() > 1))
-         cap = false;
+      if (isalpha(text[0]) && (isupper(text[0])) && (text.length() >= 1))
+      {
+         numFirstCap++;
+         //cap = false;
+      }
     
       if (allCaps)
       {
@@ -145,6 +176,14 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
       
    }
 
+   /*
+   if (isLine(textLine, "Summer.", 5))
+   {
+      cout << "numFirstCap = " << numFirstCap << '\n';
+      cout << "numWord = " << numWord << '\n';
+   }
+   */
+
    if (allCaps)
    {
       //account for those nuances when a word in a title is hypenated,
@@ -157,7 +196,8 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
    }
    else
    {
-      if (cap == true) //&& numWord > 1)
+      //if (cap == true) //&& numWord > 1)
+      if (((double)numFirstCap / numWord) >= 0.8)
          return true;
       else
          return false;
@@ -251,30 +291,8 @@ double charAreaRatio(rapidxml::xml_node<>* textLine)
    return ratio[midIdx];
 }
 
-bool isLine(rapidxml::xml_node<>* textLine, String key, int numWords)
-{
-   String text;
-   int wordCount = 0;
-   bool found = false;
-   
-   for (rapidxml::xml_node<>* word = textLine->first_node("String"); word != 0;
-         word = word->next_sibling("String"))
-   {
-      wordCount++;
-      text = word->first_attribute("CONTENT")->value();
-
-      if (text.compare(key))
-         found = true;
-   }
-   
-   if (found && (wordCount == numWords))
-      return true;
-   else
-      return false;
-}
-
 void displayImage(int, void*)
-//void displayImage(int heightVal)
+//bool displayImage(int charA)
 {
    //double min = 1000.0;
    //double max = 0.0;
@@ -283,6 +301,7 @@ void displayImage(int, void*)
    double tempWordRatio = 0.0;
    double tempHeight = 0.0;
    double tempDist = 0.0;
+   double tempDist1 = 0.0;
    double tempCA = 0.0;
 
    double temp = 0.0;
@@ -302,6 +321,9 @@ void displayImage(int, void*)
 
    double cArea = 0.0;
 
+
+   bool reached = false;
+
    for (rapidxml::xml_node<>* textBlock = first_textblock; textBlock != 0;
          textBlock = textBlock->next_sibling("TextBlock"))
    {
@@ -310,19 +332,18 @@ void displayImage(int, void*)
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
-         prevLoc = getVPOS(textBlock->first_node("TextLine"));
+         if (numLine = 0)
+            prevLoc = getVPOS(textBlock->first_node("TextLine")) +
+               getObjectHeight(textBlock->first_node("TextLine"));
 
          numLine++;
 
          //check previous 4 lines
          
-         
-         if ((numLine >= 2) && (numLine % 2 == 0))
-         {
-            curLoc = getVPOS(textLine);
-            dist1 = curLoc - prevLoc;
-            prevLoc = curLoc;
-         }
+        
+         curLoc = getVPOS(textLine);
+         dist1 = curLoc - prevLoc;
+         prevLoc = curLoc + getObjectHeight(textLine);
          
          //Idea - check all lines whose words begin with capital letter and
          //check the min distance of that line from the line above and below it.
@@ -331,27 +352,30 @@ void displayImage(int, void*)
          //check next 4 lines
          dist2 = distNextFour(textLine);
 
-         
+         /*
          if (dist1 < dist2) 
             maxDist = dist1;
          else
             maxDist = dist2;
+         */
          
          cArea = charAreaRatio(textLine);
          temp = getWidthCharRatio(textLine, true);
 
-         if (temp > gMaxDist)
+         if (dist1 > gMaxDist)
          {
-            gMaxDist = temp;
+            gMaxDist = dist1;
          }
-         if (temp < gMinDist)
+         if (dist1 < gMinDist)
          {
-            gMinDist = temp;
+            gMinDist = dist1;
          }
          
          //distThresh = 2734;
          distThresh = 2698;
+         //distThresh = charA;
          tempDist = distThresh / (double)10;
+         //tempDist = 84.6;
 
          //widthCharRatio = 341;
          tempRatio = widthCharRatio / (double)10;
@@ -366,10 +390,14 @@ void displayImage(int, void*)
          tempHeight = heightThresh / (double)10;
          tempHeight += 11.9618;
 
-         charArea = 5561;
+         //charArea = 5561;
+         //BELOW charArea - may work ???
+         charArea = 4577;
+         //charArea = charA; 
          tempCA = charArea / (double)10;
          tempCA += 315;
 
+         tempDist1 = distAbove / (double)10;
 
          /* Absolute - if all words are capitalized, then no false negatives
           * for titles. Also, if all letters are capitalized, it is indeed a title.
@@ -404,17 +432,40 @@ void displayImage(int, void*)
          {
             //if ((maxDist >= tempDist) && ((cArea > tempCA) || 
              //        getWidthCharRatio(textLine) > tempRatio))
+            if (isLine(textLine, "Innorfiit", 3) && (capLine(textLine, false) == 0))
+            {
+               cout << "PROBLEM!!" << '\n';
+            }
+
             if (capLine(textLine, false) && (cArea > tempCA))
             {
-               if ((maxDist >= tempDist))// || 
+               //if (isLine(textLine, "Sciililor", 3))
+               
+               if (isLine(textLine, "Innorfiit", 3))
+               {
+                  cout << "Reached 1st layer!!!" << '\n';
+                  reached = true;
+               }
+
+               if ((dist2 >= tempDist) || (dist1 >= tempDist1))
+               {
+                  if (isLine(textLine, "Innorfiit", 3))
+                  {
+                     cout << "Reached 2nd layer!!!" << '\n';
+                     cout << "tempDist = " << tempDist << '\n';
+                  }
+
+                  drawBlock(textLine, Scalar(0,255,255));
                   /*
                   (getWidthCharRatio(textLine, false) > tempRatio) || 
                      (getWidthCharRatio(textLine, true) > tempWordRatio))
                      */
-               //if (capLine(textLine, false))
-                  drawBlock(textLine, Scalar(0,0,255));
+                  //if (capLine(textLine, false))
+               }
                else
+               {
                   drawBlock(textLine, Scalar(255,0,0));
+               }
             }
 
             /*
@@ -426,13 +477,16 @@ void displayImage(int, void*)
             */
             
             else
+            {
                drawBlock(textLine, Scalar(255,0,0));
+            }
          }
          
       }
    }
 
    
+  
    cout << "Max Dist: " << gMaxDist << '\n';
    cout << "Min Dist: " << gMinDist << '\n';
    
@@ -442,10 +496,12 @@ void displayImage(int, void*)
    compression_params.push_back(95);
    
    imwrite("segImage.jpg", blank, compression_params);
-   */
+   */  
    
 
    imshow("Threshold Result", blank);
+
+   //return reached;
 }
 
 /*
@@ -573,7 +629,7 @@ int main(int argc, char* argv[])
 
    namedWindow("Threshold Result", WINDOW_NORMAL);
    
-   
+   /*
    createTrackbar("heightThresh", "Threshold Result", &heightThresh, 3071,
          displayImage);
 
@@ -587,19 +643,29 @@ int main(int argc, char* argv[])
    createTrackbar("distThresh", "Threshold Result", &distThresh, 9100,
          displayImage);
    createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
-   
-  
+   */
+
+   createTrackbar("distAbove", "Threshold Result", &distAbove, 15080,
+         displayImage);
    
    //createTrackbar("BlockHeight", "Threshold Result", &blockThresh, 7164, displayBlock);
    
 
    displayImage(0,0);
+   
    /*
-   for (int i = 444; i > 400; i--)
+   for (int i = 2698; i > 400; i--)
    {
-      displayImage(i);
+      cout << "charArea = " << i << '\n';
+      if(displayImage(i))
+      {
+         cout << "Reached, I = " << i << '\n';
+         break;
+      }
    }
    */
+   
+   
    waitKey();
 
    return 0;
