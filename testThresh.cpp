@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <algorithm>
 #include <functional>
+#include <boost/algorithm/string/predicate.hpp>
 
 //#include "parser.h"
 
@@ -149,6 +150,10 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
    {
       if (isalpha(text[0]))
       {
+         if (isLine(textLine, "Police.", 3))
+         {
+            cout << "Word Count Text = " << text << '\n';
+         }
          numWord++;
       }
 
@@ -157,6 +162,11 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
       
       if (isalpha(text[0]) && (isupper(text[0])) && (text.length() >= 1))
       {
+         if (isLine(textLine, "Police.", 3))
+         {
+            cout << "Cap Word Text = " << text << '\n';
+         }
+
          numFirstCap++;
          //cap = false;
       }
@@ -176,13 +186,13 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
       
    }
 
-   /*
-   if (isLine(textLine, "Summer.", 5))
+   
+   if (isLine(textLine, "Police.", 3))
    {
       cout << "numFirstCap = " << numFirstCap << '\n';
       cout << "numWord = " << numWord << '\n';
    }
-   */
+   
 
    if (allCaps)
    {
@@ -206,8 +216,8 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
 
 double distNextFour(rapidxml::xml_node<>* textLine)
 {
-   double prevLoc = getVPOS(textLine);
-   double curLoc = getVPOS(textLine);
+   double prevLoc = getVPOS(textLine) + getObjectHeight(textLine);
+   double curLoc = prevLoc;
 
    double dist = 0.0;
 
@@ -226,7 +236,6 @@ double distNextFour(rapidxml::xml_node<>* textLine)
          {
             curLoc = getVPOS(tempLine);
 
-            
             /*
             if ((tempLine = (tempLine->next_sibling("TextLine"))) != NULL)
             {
@@ -291,8 +300,9 @@ double charAreaRatio(rapidxml::xml_node<>* textLine)
    return ratio[midIdx];
 }
 
-void displayImage(int, void*)
+//void displayImage(int, void*)
 //bool displayImage(int charA)
+void displayImage()
 {
    //double min = 1000.0;
    //double max = 0.0;
@@ -323,6 +333,9 @@ void displayImage(int, void*)
 
 
    bool reached = false;
+
+   String word1;
+   String word2;
 
    for (rapidxml::xml_node<>* textBlock = first_textblock; textBlock != 0;
          textBlock = textBlock->next_sibling("TextBlock"))
@@ -372,7 +385,8 @@ void displayImage(int, void*)
          }
          
          //distThresh = 2734;
-         distThresh = 2698;
+         //distThresh = 2698;
+         distThresh = 1611;
          //distThresh = charA;
          tempDist = distThresh / (double)10;
          //tempDist = 84.6;
@@ -386,7 +400,8 @@ void displayImage(int, void*)
 
          //heightThresh = heightVal;
 
-         heightThresh = 444;
+         heightThresh = 438;
+         //heightThresh = 444;
          tempHeight = heightThresh / (double)10;
          tempHeight += 11.9618;
 
@@ -416,15 +431,19 @@ void displayImage(int, void*)
          }
          */
          
+         /*
+         if (isLine(textLine, "Police.", 3))
+         {
+            cout << "tempHeight = " << tempHeight << '\n';
+            cout << "getObjectHeight = " << getObjectHeight(textLine) << '\n';
+         }
+         */
         
-         if (((getObjectHeight(textLine) > tempHeight) ||
+         if ((((getObjectHeight(textLine) > tempHeight) &&
+                     capLine(textLine, false))||
                (capLine(textLine, true))))
 
          {
-            /*
-            if (isLine(textLine, "Sciililor", 3))
-               cout << "Reached!!!" << '\n';
-            */
             drawBlock(textLine, Scalar(0,0,255));
          }
 
@@ -432,30 +451,62 @@ void displayImage(int, void*)
          {
             //if ((maxDist >= tempDist) && ((cArea > tempCA) || 
              //        getWidthCharRatio(textLine) > tempRatio))
-            if (isLine(textLine, "Innorfiit", 3) && (capLine(textLine, false) == 0))
+            /*
+            if (isLine(textLine, "Police.", 3) && (capLine(textLine, false) == 0))
             {
                cout << "PROBLEM!!" << '\n';
             }
+            */
 
             if (capLine(textLine, false) && (cArea > tempCA))
             {
                //if (isLine(textLine, "Sciililor", 3))
                
-               if (isLine(textLine, "Innorfiit", 3))
+               /*
+               if (isLine(textLine, "Police.", 3))
                {
                   cout << "Reached 1st layer!!!" << '\n';
+                  cout << getObjectHeight(textLine) << '\n';
                   reached = true;
                }
+               */
 
-               if ((dist2 >= tempDist) || (dist1 >= tempDist1))
+               if ((dist2 >= tempDist))// || (dist1 >= tempDist1))
                {
-                  if (isLine(textLine, "Innorfiit", 3))
+                  /*
+                  if (isLine(textLine, "Police.", 3))
                   {
                      cout << "Reached 2nd layer!!!" << '\n';
                      cout << "tempDist = " << tempDist << '\n';
                   }
+                  */
 
-                  drawBlock(textLine, Scalar(0,255,255));
+                  if (textLine->first_node("String") != NULL)
+                  {
+                     word1 = textLine->first_node("String")->
+                        first_attribute("CONTENT")->value(); 
+
+                     if (textLine->first_node("String")->next_sibling("String")
+                           != NULL)
+                     {
+                        word2 = textLine->first_node("String")
+                           ->next_sibling("String")->
+                           first_attribute("CONTENT")->value(); 
+                     }
+                  }
+                  
+                  if (boost::iequals(word1, "continued") &&
+                        boost::iequals(word2, "on"))
+                  {
+                     drawBlock(textLine, Scalar(255,0,0));
+                  }
+                  
+
+                  else
+                  {
+                 
+                     drawBlock(textLine, Scalar(0,0,255));
+                  } 
                   /*
                   (getWidthCharRatio(textLine, false) > tempRatio) || 
                      (getWidthCharRatio(textLine, true) > tempWordRatio))
@@ -486,20 +537,17 @@ void displayImage(int, void*)
    }
 
    
-  
    cout << "Max Dist: " << gMaxDist << '\n';
    cout << "Min Dist: " << gMinDist << '\n';
    
-   /*
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(95);
    
    imwrite("segImage.jpg", blank, compression_params);
-   */  
-   
+     
 
-   imshow("Threshold Result", blank);
+   //imshow("Threshold Result", blank);
 
    //return reached;
 }
@@ -643,15 +691,17 @@ int main(int argc, char* argv[])
    createTrackbar("distThresh", "Threshold Result", &distThresh, 9100,
          displayImage);
    createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
-   */
-
+   
    createTrackbar("distAbove", "Threshold Result", &distAbove, 15080,
          displayImage);
+   */
    
    //createTrackbar("BlockHeight", "Threshold Result", &blockThresh, 7164, displayBlock);
    
+   //cout << "Height = " << Ydimension * (168.0/pageHeight) << '\n';
 
-   displayImage(0,0);
+
+   //displayImage(0,0);
    
    /*
    for (int i = 2698; i > 400; i--)
@@ -664,9 +714,10 @@ int main(int argc, char* argv[])
       }
    }
    */
+
+   displayImage();
    
-   
-   waitKey();
+   //waitKey();
 
    return 0;
 }
