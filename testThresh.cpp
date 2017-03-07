@@ -82,6 +82,19 @@ double getObjectWidth(rapidxml::xml_node<>* block)
 
    return (Ydimension * (xmlHeight/pageHeight));
 }
+
+double getVPOS(rapidxml::xml_node<>* block) 
+{
+   int Vpos = atoi(block->first_attribute("VPOS")->value());
+   return (Ydimension * (Vpos/(double)pageHeight));
+}
+
+double getHPOS(rapidxml::xml_node<>* block) 
+{
+   int Vpos = atoi(block->first_attribute("HPOS")->value());
+   return (Ydimension * (Vpos/(double)pageHeight));
+}
+
 void drawBlock(rapidxml::xml_node<>* block, cv::Scalar color)
 {
    int rHpos = atoi(block->first_attribute("HPOS")->value());
@@ -94,19 +107,17 @@ void drawBlock(rapidxml::xml_node<>* block, cv::Scalar color)
    Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
          , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
 
+
    //note - for Scalar - openCV uses BGR color format
    //therefore - Scalar(0, 0, 255) is solid red 
+   
+   /*
+   Point rP1((int)(getHPOS(block)), (int)(getVPOS(block)));
+   Point rP2(rP1.x + (int)(getObjectWidth(block)),
+         rP1.y + (int)(getObjectHeight(block)));
+
+   */
    rectangle(blank, rP1, rP2, color, 7);
-}
-
-double getVPOS(rapidxml::xml_node<>* block) {
-   int Vpos = atoi(block->first_attribute("VPOS")->value());
-   return (Ydimension * (Vpos/(double)pageHeight));
-}
-
-double getHPOS(rapidxml::xml_node<>* block) {
-   int Vpos = atoi(block->first_attribute("HPOS")->value());
-   return (Ydimension * (Vpos/(double)pageHeight));
 }
 
 bool isLine(rapidxml::xml_node<>* textLine, String key, int numWords)
@@ -300,9 +311,21 @@ double charAreaRatio(rapidxml::xml_node<>* textLine)
    return ratio[midIdx];
 }
 
-//void displayImage(int, void*)
+//BLOCK SEGEMENTATION
+
+struct Block
+{
+   string label;
+   double x;
+   double y;
+   double height;
+   double width;
+   string block_content;
+};
+
+void displayImage(int, void*)
 //bool displayImage(int charA)
-void displayImage()
+//void displayImage()
 {
    //double min = 1000.0;
    //double max = 0.0;
@@ -337,10 +360,24 @@ void displayImage()
    String word1;
    String word2;
 
+   vector<Block> master;
+
+   double vpos, tempVpos;
+   double hpos = 0;
+
+   double width = 0;
+
+   bool title = false;
+
    for (rapidxml::xml_node<>* textBlock = first_textblock; textBlock != 0;
          textBlock = textBlock->next_sibling("TextBlock"))
    {
       numLine = 0;
+
+      vpos = getVPOS(textBlock);
+      hpos = getHPOS(textBlock);
+      width = getObjectWidth(textBlock);
+      tempVpos = vpos;
 
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
@@ -351,12 +388,49 @@ void displayImage()
 
          numLine++;
 
+         if (isLine(textLine, "Townseiul", 3))
+         {
+            cout << "Townseiul bottomL = " << getVPOS(textLine)
+               + getObjectHeight(textLine) << '\n';
+         }
+
+         if (isLine(textLine, "Nears.", 3))
+         {
+            cout << "Nears. topL = " << getVPOS(textLine) << '\n';
+            cout << "Nears. bottomL = " << getVPOS(textLine) +
+               getObjectHeight(textLine) << '\n';
+            //cout << "Nears. height = " << getObjectHeight(textLine) << '\n';
+         }
+
+         if (isLine(textLine, "Dies", 5))
+         {
+            cout << "Canton topL = " << getVPOS(textLine) << '\n';
+            cout << "Canton bottomL = " << getVPOS(textLine) +
+               getObjectHeight(textLine) << '\n';
+         }
+
+         if (isLine(textLine, "Quell", 3))
+         {
+            cout << "Quell topL = " << getVPOS(textLine) << '\n';
+            cout << "Quell bottomL = " << getVPOS(textLine) +
+               getObjectHeight(textLine) << '\n';
+         }
+
+         if (isLine(textLine, "Fracas", 3))
+         {
+            cout << "Fracas topL = " << getVPOS(textLine) << '\n';
+            cout << "Fracas bottomL = " << getVPOS(textLine) + 
+               getObjectHeight(textLine) << '\n';
+         }
+
          //check previous 4 lines
          
-        
          curLoc = getVPOS(textLine);
          dist1 = curLoc - prevLoc;
          prevLoc = curLoc + getObjectHeight(textLine);
+
+         tempDist1 = distAbove / (double)10;
+
          
          //Idea - check all lines whose words begin with capital letter and
          //check the min distance of that line from the line above and below it.
@@ -412,7 +486,6 @@ void displayImage()
          tempCA = charArea / (double)10;
          tempCA += 315;
 
-         tempDist1 = distAbove / (double)10;
 
          /* Absolute - if all words are capitalized, then no false negatives
           * for titles. Also, if all letters are capitalized, it is indeed a title.
@@ -445,6 +518,7 @@ void displayImage()
 
          {
             drawBlock(textLine, Scalar(0,0,255));
+            //title = false;
          }
 
          else
@@ -532,7 +606,34 @@ void displayImage()
                drawBlock(textLine, Scalar(255,0,0));
             }
          }
-         
+
+         if (dist1 > tempDist1)
+         {
+            tempVpos = prevLoc;
+            Block temp;
+            temp.label = "Title";
+            temp.y = vpos;
+            temp.x = hpos;
+            temp.height = tempVpos - vpos;
+            temp.width = width;
+
+            master.push_back(temp);
+
+            vpos = curLoc;
+            tempVpos = curLoc + getObjectHeight(textLine);
+
+            Point p1(temp.x, temp.y);
+            Point p2(temp.x + temp.width, temp.y + temp.height);
+
+            rectangle(blank, p1, p2, Scalar(0,0,0), 17);
+            
+         }
+
+         else
+         {
+            tempVpos = curLoc + getObjectHeight(textLine);
+         }
+
       }
    }
 
@@ -540,14 +641,16 @@ void displayImage()
    cout << "Max Dist: " << gMaxDist << '\n';
    cout << "Min Dist: " << gMinDist << '\n';
    
+   /*
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(95);
    
    imwrite("segImage.jpg", blank, compression_params);
+   */
      
 
-   //imshow("Threshold Result", blank);
+   imshow("Threshold Result", blank);
 
    //return reached;
 }
@@ -691,17 +794,21 @@ int main(int argc, char* argv[])
    createTrackbar("distThresh", "Threshold Result", &distThresh, 9100,
          displayImage);
    createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
+   */
+
    
    createTrackbar("distAbove", "Threshold Result", &distAbove, 15080,
          displayImage);
-   */
+   
+   
+   //createTrackbar("distThresh", "Threshold Result", &dist, 
    
    //createTrackbar("BlockHeight", "Threshold Result", &blockThresh, 7164, displayBlock);
    
    //cout << "Height = " << Ydimension * (168.0/pageHeight) << '\n';
 
 
-   //displayImage(0,0);
+   displayImage(0,0);
    
    /*
    for (int i = 2698; i > 400; i--)
@@ -715,9 +822,9 @@ int main(int argc, char* argv[])
    }
    */
 
-   displayImage();
+   //displayImage();
    
-   //waitKey();
+   waitKey();
 
    return 0;
 }
