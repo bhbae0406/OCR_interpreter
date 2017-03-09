@@ -323,9 +323,30 @@ struct Block
    string block_content;
 };
 
-void displayImage(int, void*)
+double getOrigVPOS(rapidxml::xml_node<>* block)
+{
+   return double(atoi(block->first_attribute("VPOS")->value()));
+}
+
+double getOrigHPOS(rapidxml::xml_node<>* block)
+{
+   return double(atoi(block->first_attribute("HPOS")->value()));
+}
+
+double getOrigHeight(rapidxml::xml_node<>* block)
+{
+   return double(atoi(block->first_attribute("HEIGHT")->value()));
+}
+
+double getOrigWidth(rapidxml::xml_node<>* block)
+{
+   return double(atoi(block->first_attribute("WIDTH")->value()));
+}
+
+
+//void displayImage(int, void*)
 //bool displayImage(int charA)
-//void displayImage()
+void displayImage()
 {
    //double min = 1000.0;
    //double max = 0.0;
@@ -369,67 +390,125 @@ void displayImage(int, void*)
 
    bool title = false;
 
+   bool process = false;
+
+   int numBlock = 0;
+
+   bool prevCat = false;
+   bool curCat = false;
+
    for (rapidxml::xml_node<>* textBlock = first_textblock; textBlock != 0;
          textBlock = textBlock->next_sibling("TextBlock"))
    {
       numLine = 0;
+      numBlock++;
 
-      vpos = getVPOS(textBlock);
-      hpos = getHPOS(textBlock);
-      width = getObjectWidth(textBlock);
+      if (process)
+      {
+            //tempVpos = prevLoc;
+            Block temp;
+            temp.label = "Title";
+            temp.y = vpos;
+            temp.x = hpos;
+            temp.height = tempVpos - vpos;
+            temp.width = width;
+
+            master.push_back(temp);
+
+            Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
+
+            Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
+         ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
+
+            //rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
+
+            process = false;
+      }
+
+      vpos = getOrigVPOS(textBlock);
+      hpos = getOrigHPOS(textBlock);
+      width = getOrigWidth(textBlock);
       tempVpos = vpos;
 
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
-         if (numLine = 0)
-            prevLoc = getVPOS(textBlock->first_node("TextLine")) +
-               getObjectHeight(textBlock->first_node("TextLine"));
+         if (!process)
+         {
+            vpos = getOrigVPOS(textLine);
+            hpos = getOrigHPOS(textLine);
+         }
+
+         
+         /*
+         if (numLine == 0)
+         {
+            prevLoc = getOrigVPOS(textBlock->first_node("TextLine")) +
+               getOrigHeight(textBlock->first_node("TextLine"));
+         }
+         */
 
          numLine++;
+         /*
 
          if (isLine(textLine, "Townseiul", 3))
          {
-            cout << "Townseiul bottomL = " << getVPOS(textLine)
-               + getObjectHeight(textLine) << '\n';
+            cout << "Townseiul bottomL = " << getOrigVPOS(textLine)
+               + getOrigHeight(textLine) << '\n';
          }
 
          if (isLine(textLine, "Nears.", 3))
          {
-            cout << "Nears. topL = " << getVPOS(textLine) << '\n';
-            cout << "Nears. bottomL = " << getVPOS(textLine) +
-               getObjectHeight(textLine) << '\n';
+            cout << "Nears. topL = " << getOrigVPOS(textLine) << '\n';
+            cout << "Nears. bottomL = " << getOrigVPOS(textLine) +
+               getOrigHeight(textLine) << '\n';
             //cout << "Nears. height = " << getObjectHeight(textLine) << '\n';
          }
 
          if (isLine(textLine, "Dies", 5))
          {
-            cout << "Canton topL = " << getVPOS(textLine) << '\n';
-            cout << "Canton bottomL = " << getVPOS(textLine) +
-               getObjectHeight(textLine) << '\n';
+            cout << "Canton topL = " << getOrigVPOS(textLine) << '\n';
+            cout << "Canton bottomL = " << getOrigVPOS(textLine) +
+               getOrigHeight(textLine) << '\n';
          }
 
          if (isLine(textLine, "Quell", 3))
          {
-            cout << "Quell topL = " << getVPOS(textLine) << '\n';
-            cout << "Quell bottomL = " << getVPOS(textLine) +
-               getObjectHeight(textLine) << '\n';
+            cout << "Quell topL = " << getOrigVPOS(textLine) << '\n';
+            cout << "Quell bottomL = " << getOrigVPOS(textLine) +
+               getOrigHeight(textLine) << '\n';
          }
 
          if (isLine(textLine, "Fracas", 3))
          {
-            cout << "Fracas topL = " << getVPOS(textLine) << '\n';
-            cout << "Fracas bottomL = " << getVPOS(textLine) + 
-               getObjectHeight(textLine) << '\n';
+            cout << "Fracas topL = " << getOrigVPOS(textLine) << '\n';
+            cout << "Fracas bottomL = " << getOrigVPOS(textLine) + 
+               getOrigHeight(textLine) << '\n';
          }
+
+         */
 
          //check previous 4 lines
          
-         curLoc = getVPOS(textLine);
-         dist1 = curLoc - prevLoc;
-         prevLoc = curLoc + getObjectHeight(textLine);
+         /*
+         if (numLine == 0)
+         {
+            dist1 = 0;
+         }
+         else
+         {
+            curLoc = getOrigVPOS(textLine);
+            dist1 = curLoc - prevLoc;
+            prevLoc = curLoc + getOrigHeight(textLine);
+         }
+         */
 
-         tempDist1 = distAbove / (double)10;
+         cout << "Dist1 = " << dist1 << '\n';
+
+         //tempDist1 = distAbove / (double)10;
+         tempDist1 = 100.0;
+
+         cout << "TempDist1 = " << tempDist1 << '\n';
 
          
          //Idea - check all lines whose words begin with capital letter and
@@ -518,7 +597,7 @@ void displayImage(int, void*)
 
          {
             drawBlock(textLine, Scalar(0,0,255));
-            //title = false;
+            title = true;
          }
 
          else
@@ -534,27 +613,8 @@ void displayImage(int, void*)
 
             if (capLine(textLine, false) && (cArea > tempCA))
             {
-               //if (isLine(textLine, "Sciililor", 3))
-               
-               /*
-               if (isLine(textLine, "Police.", 3))
-               {
-                  cout << "Reached 1st layer!!!" << '\n';
-                  cout << getObjectHeight(textLine) << '\n';
-                  reached = true;
-               }
-               */
-
                if ((dist2 >= tempDist))// || (dist1 >= tempDist1))
                {
-                  /*
-                  if (isLine(textLine, "Police.", 3))
-                  {
-                     cout << "Reached 2nd layer!!!" << '\n';
-                     cout << "tempDist = " << tempDist << '\n';
-                  }
-                  */
-
                   if (textLine->first_node("String") != NULL)
                   {
                      word1 = textLine->first_node("String")->
@@ -573,6 +633,7 @@ void displayImage(int, void*)
                         boost::iequals(word2, "on"))
                   {
                      drawBlock(textLine, Scalar(255,0,0));
+                     title = false;
                   }
                   
 
@@ -580,6 +641,7 @@ void displayImage(int, void*)
                   {
                  
                      drawBlock(textLine, Scalar(0,0,255));
+                     title = true;
                   } 
                   /*
                   (getWidthCharRatio(textLine, false) > tempRatio) || 
@@ -590,6 +652,7 @@ void displayImage(int, void*)
                else
                {
                   drawBlock(textLine, Scalar(255,0,0));
+                  title = false;
                }
             }
 
@@ -604,53 +667,122 @@ void displayImage(int, void*)
             else
             {
                drawBlock(textLine, Scalar(255,0,0));
+               title = false;
             }
          }
 
-         if (dist1 > tempDist1)
+         //if process if false - we are starting a new block
+         if (!process)
          {
-            tempVpos = prevLoc;
+            prevLoc = getOrigVPOS(textLine);
+            prevCat = title; //remember - title is a boolean
+            curCat = title;
+         }
+
+         process = true;
+
+         else
+         {
+            curLoc = getOrigVPOS(textLine) + getObjectHeight(textLine);
+            curCat = title;
+         }
+
+         //if (dist1 > tempDist1)
+         if (curCat != prevCat)
+         {
+            cout << "FOUND!" << '\n';
+            //tempVpos = prevLoc;
             Block temp;
-            temp.label = "Title";
+
+            if (prevCat == true)
+            {
+               temp.label = "Title";
+            }
+            else
+            {
+               temp.label = "Article";
+            }
+
             temp.y = vpos;
             temp.x = hpos;
-            temp.height = tempVpos - vpos;
+            //temp.height = tempVpos - vpos;
+            temp.height = curLoc - prevLoc;
             temp.width = width;
 
             master.push_back(temp);
 
-            vpos = curLoc;
-            tempVpos = curLoc + getObjectHeight(textLine);
+            //vpos = curLoc;
+            //tempVpos = curLoc + getObjectHeight(textLine);
 
-            Point p1(temp.x, temp.y);
-            Point p2(temp.x + temp.width, temp.y + temp.height);
+            Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
 
-            rectangle(blank, p1, p2, Scalar(0,0,0), 17);
-            
+            Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
+         ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
+
+            if (prevCat == true)
+            {
+               //rectangle(blank, rP1, rP2, Scalar(100,100,0), 17);
+            }
+            else
+            {
+               //rectangle(blank, rP1, rP2, Scalar(200,100,200), 17);
+            }
+
+            process = false;
          }
 
+         /*
          else
          {
-            tempVpos = curLoc + getObjectHeight(textLine);
+            tempVpos = curLoc + getOrigHeight(textLine);
          }
+         */
 
+         prevCat = curCat;
+
+      } //for
+
+      if (numBlock == 7)
+      {
+         break;
       }
-   }
+      
+   } //for textblock
 
+   if (process)
+   {
+      tempVpos = prevLoc;
+      Block temp;
+      temp.label = "Title";
+      temp.y = vpos;
+      temp.x = hpos;
+      temp.height = tempVpos - vpos;
+      temp.width = width;
+
+      master.push_back(temp);
+
+      Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
+
+      Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
+   ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
+
+      rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
+
+      process = false;
+   }
    
    cout << "Max Dist: " << gMaxDist << '\n';
    cout << "Min Dist: " << gMinDist << '\n';
    
-   /*
+   
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-   compression_params.push_back(95);
+   compression_params.push_back(50);
    
    imwrite("segImage.jpg", blank, compression_params);
-   */
      
 
-   imshow("Threshold Result", blank);
+   //imshow("Threshold Result", blank);
 
    //return reached;
 }
@@ -753,7 +885,6 @@ void displayBlock(int, void*)
 }
 */
 
-
 int main(int argc, char* argv[])
 {
    if (argc != 2)
@@ -794,11 +925,13 @@ int main(int argc, char* argv[])
    createTrackbar("distThresh", "Threshold Result", &distThresh, 9100,
          displayImage);
    createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
-   */
+  
 
    
    createTrackbar("distAbove", "Threshold Result", &distAbove, 15080,
          displayImage);
+
+   */
    
    
    //createTrackbar("distThresh", "Threshold Result", &dist, 
@@ -808,7 +941,7 @@ int main(int argc, char* argv[])
    //cout << "Height = " << Ydimension * (168.0/pageHeight) << '\n';
 
 
-   displayImage(0,0);
+   //displayImage(0,0);
    
    /*
    for (int i = 2698; i > 400; i--)
@@ -822,9 +955,9 @@ int main(int argc, char* argv[])
    }
    */
 
-   //displayImage();
+   displayImage();
    
-   waitKey();
+   //waitKey();
 
    return 0;
 }
