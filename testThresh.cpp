@@ -403,14 +403,14 @@ void displayImage()
       numLine = 0;
       numBlock++;
 
-      if (process)
+      if (process) 
       {
             //tempVpos = prevLoc;
             Block temp;
             temp.label = "Title";
             temp.y = vpos;
             temp.x = hpos;
-            temp.height = tempVpos - vpos;
+            temp.height = prevLoc - vpos;
             temp.width = width;
 
             master.push_back(temp);
@@ -420,26 +420,20 @@ void displayImage()
             Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
          ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
 
-            //rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
+            rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
 
             process = false;
+            width = 0;
       }
 
       vpos = getOrigVPOS(textBlock);
       hpos = getOrigHPOS(textBlock);
-      width = getOrigWidth(textBlock);
+      //width = getOrigWidth(textBlock);
       tempVpos = vpos;
 
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
-         if (!process)
-         {
-            vpos = getOrigVPOS(textLine);
-            hpos = getOrigHPOS(textLine);
-         }
-
-         
          /*
          if (numLine == 0)
          {
@@ -674,21 +668,24 @@ void displayImage()
          //if process if false - we are starting a new block
          if (!process)
          {
-            prevLoc = getOrigVPOS(textLine);
-            prevCat = title; //remember - title is a boolean
-            curCat = title;
+            vpos = getOrigVPOS(textLine);
+            hpos = getOrigHPOS(textLine);
+            process = true;
+            prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
          }
+
+         if (getOrigWidth(textLine) > width)
+            width = getOrigWidth(textLine);
+
+         if (getOrigHPOS(textLine) < hpos)
+            hpos = getOrigHPOS(textLine);
+
+         curCat = title;
 
          process = true;
 
-         else
-         {
-            curLoc = getOrigVPOS(textLine) + getObjectHeight(textLine);
-            curCat = title;
-         }
-
          //if (dist1 > tempDist1)
-         if (curCat != prevCat)
+         if ((process) && (curCat != prevCat))
          {
             cout << "FOUND!" << '\n';
             //tempVpos = prevLoc;
@@ -706,7 +703,7 @@ void displayImage()
             temp.y = vpos;
             temp.x = hpos;
             //temp.height = tempVpos - vpos;
-            temp.height = curLoc - prevLoc;
+            temp.height = prevLoc - temp.y;
             temp.width = width;
 
             master.push_back(temp);
@@ -719,6 +716,9 @@ void displayImage()
             Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
          ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
 
+
+            rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
+            /*
             if (prevCat == true)
             {
                //rectangle(blank, rP1, rP2, Scalar(100,100,0), 17);
@@ -727,20 +727,19 @@ void displayImage()
             {
                //rectangle(blank, rP1, rP2, Scalar(200,100,200), 17);
             }
+            */
 
             process = false;
+            vpos = getOrigVPOS(textLine);
+            hpos = getOrigHPOS(textLine);
+            width = 0;
          }
 
-         /*
-         else
-         {
-            tempVpos = curLoc + getOrigHeight(textLine);
-         }
-         */
+         prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
 
          prevCat = curCat;
 
-      } //for
+      } //for textLine
 
       if (numBlock == 7)
       {
@@ -749,6 +748,7 @@ void displayImage()
       
    } //for textblock
 
+   /*
    if (process)
    {
       tempVpos = prevLoc;
@@ -770,6 +770,7 @@ void displayImage()
 
       process = false;
    }
+   */
    
    cout << "Max Dist: " << gMaxDist << '\n';
    cout << "Min Dist: " << gMinDist << '\n';
