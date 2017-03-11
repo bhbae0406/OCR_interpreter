@@ -467,7 +467,12 @@ void displayImage()
       {
             //tempVpos = prevLoc;
             Block temp;
-            temp.label = "Title";
+
+            if (prevCat)
+               temp.label = "Title";
+            else
+               temp.label = "Article";
+
             temp.y = vpos;
             temp.x = hpos;
             temp.height = prevLoc - vpos;
@@ -478,7 +483,10 @@ void displayImage()
             Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
          ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
 
-            rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
+            if (temp.label == "Title")
+               rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
+            else
+               rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
 
             temp.y = convertToPixel(vpos);
             temp.x = convertToPixel(hpos);
@@ -501,6 +509,7 @@ void displayImage()
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
+         prevCat = curCat;
 
          /*
          if (numLine == 0)
@@ -658,21 +667,12 @@ void displayImage()
                (capLine(textLine, true))))
 
          {
-            drawBlock(textLine, Scalar(0,0,255));
+            //drawBlock(textLine, Scalar(0,0,255));
             title = true;
          }
 
          else
          {
-            //if ((maxDist >= tempDist) && ((cArea > tempCA) || 
-             //        getWidthCharRatio(textLine) > tempRatio))
-            /*
-            if (isLine(textLine, "Police.", 3) && (capLine(textLine, false) == 0))
-            {
-               cout << "PROBLEM!!" << '\n';
-            }
-            */
-
             if (capLine(textLine, false) && (cArea > tempCA))
             {
                if ((dist2 >= tempDist))// || (dist1 >= tempDist1))
@@ -694,7 +694,7 @@ void displayImage()
                   if (boost::iequals(word1, "continued") &&
                         boost::iequals(word2, "on"))
                   {
-                     drawBlock(textLine, Scalar(255,0,0));
+                     //drawBlock(textLine, Scalar(255,0,0));
                      title = false;
                   }
                   
@@ -702,33 +702,20 @@ void displayImage()
                   else
                   {
                  
-                     drawBlock(textLine, Scalar(0,0,255));
+                     //drawBlock(textLine, Scalar(0,0,255));
                      title = true;
                   } 
-                  /*
-                  (getWidthCharRatio(textLine, false) > tempRatio) || 
-                     (getWidthCharRatio(textLine, true) > tempWordRatio))
-                     */
-                  //if (capLine(textLine, false))
                }
                else
                {
-                  drawBlock(textLine, Scalar(255,0,0));
+                  //drawBlock(textLine, Scalar(255,0,0));
                   title = false;
                }
             }
 
-            /*
-            else if (capLine(textLine, false) && 
-                  (getWidthCharRatio(textLine) > tempRatio))
-            {
-               drawBlock(textLine, Scalar(0,0,255));
-            }
-            */
-            
             else
             {
-               drawBlock(textLine, Scalar(255,0,0));
+               //drawBlock(textLine, Scalar(255,0,0));
                title = false;
             }
          }
@@ -763,9 +750,13 @@ void displayImage()
 
             Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
          ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
+         
+            if (temp.label == "Title")
+               rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
+            else
+               rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
 
-
-            rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
+            //rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
 
             temp.y = convertToPixel(vpos);
             temp.x = convertToPixel(hpos);
@@ -807,8 +798,7 @@ void displayImage()
 
          prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
 
-         prevCat = curCat;
-
+         //prevCat = curCat;
 
 
 	for (xml_node<> * word = textLine->first_node("String"); word != 0;
@@ -868,6 +858,7 @@ void displayImage()
    //cout << "Max Dist: " << gMaxDist << '\n';
    //cout << "Min Dist: " << gMinDist << '\n';
    
+   
    int countBlock = 0;
 
    for (size_t i = 0; i < master.size(); i++)
@@ -889,6 +880,7 @@ void displayImage()
    compression_params.push_back(50);
    
    imwrite("segImage.jpg", blank, compression_params);
+   
      
 
    //imshow("Threshold Result", blank);
@@ -1020,6 +1012,7 @@ int main(int argc, char* argv[])
 
    namedWindow("Threshold Result", WINDOW_NORMAL);
    
+   
    /*
    createTrackbar("heightThresh", "Threshold Result", &heightThresh, 3071,
          displayImage);
@@ -1039,8 +1032,9 @@ int main(int argc, char* argv[])
    
    createTrackbar("distAbove", "Threshold Result", &distAbove, 15080,
          displayImage);
-
    */
+
+   
    
    
    //createTrackbar("distThresh", "Threshold Result", &dist, 
