@@ -397,13 +397,15 @@ void displayImage()
    bool prevCat = false;
    bool curCat = false;
 
+   double newEdge = 0;
+   double curEdge = 0;
+
    for (rapidxml::xml_node<>* textBlock = first_textblock; textBlock != 0;
          textBlock = textBlock->next_sibling("TextBlock"))
    {
-      numLine = 0;
       numBlock++;
 
-      if (process) 
+      if (process && (numLine > 0))
       {
             //tempVpos = prevLoc;
             Block temp;
@@ -425,6 +427,8 @@ void displayImage()
             process = false;
             width = 0;
       }
+      
+      numLine = 0;
 
       vpos = getOrigVPOS(textBlock);
       hpos = getOrigHPOS(textBlock);
@@ -434,6 +438,12 @@ void displayImage()
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
+
+         if (isLine(textLine, "June", 5))
+         {
+            cout << "GOT TO JUNE LINE" << '\n';
+         }
+
          /*
          if (numLine == 0)
          {
@@ -665,24 +675,7 @@ void displayImage()
             }
          }
 
-         //if process if false - we are starting a new block
-         if (!process)
-         {
-            vpos = getOrigVPOS(textLine);
-            hpos = getOrigHPOS(textLine);
-            process = true;
-            prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
-         }
-
-         if (getOrigWidth(textLine) > width)
-            width = getOrigWidth(textLine);
-
-         if (getOrigHPOS(textLine) < hpos)
-            hpos = getOrigHPOS(textLine);
-
          curCat = title;
-
-         process = true;
 
          //if (dist1 > tempDist1)
          if ((process) && (curCat != prevCat))
@@ -730,10 +723,24 @@ void displayImage()
             */
 
             process = false;
-            vpos = getOrigVPOS(textLine);
-            hpos = getOrigHPOS(textLine);
             width = 0;
          }
+
+         if (!process)
+         {
+            vpos = getOrigVPOS(textLine);
+            hpos = getOrigHPOS(textLine);
+            process = true;
+         }
+
+         if (getOrigHPOS(textLine) < hpos)
+            hpos = getOrigHPOS(textLine);
+
+         newEdge = getOrigHPOS(textLine) + getOrigWidth(textLine);
+         curEdge = hpos + width;
+
+         if (newEdge > curEdge)
+            width += (newEdge - curEdge);
 
          prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
 
@@ -741,11 +748,6 @@ void displayImage()
 
       } //for textLine
 
-      if (numBlock == 7)
-      {
-         break;
-      }
-      
    } //for textblock
 
    /*
