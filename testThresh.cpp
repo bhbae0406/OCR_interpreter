@@ -40,6 +40,54 @@ Mat blank(Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
 
 rapidxml::xml_node<>* first_textblock;
 
+void PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, int lineType = 8)
+{
+   CV_Assert(!img.empty() && (img.type() == CV_8UC3 || img.type() == CV_8UC1));
+   CV_Assert(roi.area() > 0);
+   CV_Assert(!text.empty());
+
+   int baseline = 0;
+
+   // Calculates the width and height of a text string
+   cv::Size textSize = cv::getTextSize(text, fontFace, fontScale, thickness, &baseline);
+
+   // Y-coordinate of the baseline relative to the bottom-most text point
+   baseline += thickness;
+
+   // Render the text over here (fits to the text size)
+   cv::Mat textImg(textSize.height + baseline, textSize.width, img.type());
+
+   if (color == cv::Scalar::all(0)) textImg = cv::Scalar::all(255);
+   else textImg = cv::Scalar::all(0);
+
+   // Estimating the resolution of bounding image
+   cv::Point textOrg((textImg.cols - textSize.width) / 2, (textImg.rows + textSize.height - baseline) / 2);
+
+   // TR and BL points of the bounding box
+   cv::Point tr(textOrg.x, textOrg.y + baseline);
+   cv::Point bl(textOrg.x + textSize.width, textOrg.y - textSize.height);
+
+   cv::putText(textImg, text, textOrg, fontFace, fontScale, color, thickness);
+
+   // Resizing according to the ROI
+   cv::resize(textImg, textImg, roi.size());
+
+   cv::Mat textImgMask = textImg;
+   if (textImgMask.type() == CV_8UC3)
+      cv::cvtColor(textImgMask, textImgMask, cv::COLOR_BGR2GRAY);
+
+   // Creating the mask
+   cv::equalizeHist(textImgMask, textImgMask);
+
+   if (color == cv::Scalar::all(0)) cv::threshold(textImgMask, textImgMask, 1, 255, cv::THRESH_BINARY_INV);
+   else cv::threshold(textImgMask, textImgMask, 254, 255, cv::THRESH_BINARY);
+
+   // Put into the original image
+   cv::Mat destRoi = img(roi);
+   textImg.copyTo(destRoi, textImgMask);
+}
+
+
 double getWidthCharRatio(rapidxml::xml_node<>* textLine, bool countWord)
 {
    string text;
@@ -405,6 +453,11 @@ void displayImage()
    double newEdge = 0;
    double curEdge = 0;
 
+   double printHPOS = 0;
+   double printVPOS = 0;
+   double printHeight = 0;
+   double printWidth = 0;
+
    for (rapidxml::xml_node<>* textBlock = first_textblock; textBlock != 0;
          textBlock = textBlock->next_sibling("TextBlock"))
    {
@@ -755,6 +808,34 @@ void displayImage()
          prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
 
          prevCat = curCat;
+
+
+
+	for (xml_node<> * word = textLine->first_node("String"); word != 0;
+               word = word->next_sibling("String"))
+         {
+            printHPOS = atoi(word->first_attribute("HPOS")->value());
+            printVPOS = atoi(word->first_attribute("VPOS")->value());
+            printHeight = atoi(word->first_attribute("HEIGHT")->value());
+            printWidth = atoi(word->first_attribute("WIDTH")->value());
+
+            Point p1((int)(Xdimension * (printHPOS/(double)pageWidth)), (int)(Ydimension * (printVPOS/(double)pageHeight)));
+
+            Point p2(p1.x + (int)(Xdimension * (printWidth/(double)pageWidth))
+                  , p1.y + (int)(Ydimension * (printHeight/(double)pageHeight)));
+
+
+            cv::Rect roi(p1.x, p1.y, (p2.x-p1.x), (p2.y-p1.y));
+
+            /*
+            if ((p1.x < lP1.x) || (p1.y<lP1.y) || (p2.x > lP2.x) || (p2.y > lP2.y)) {
+            	continue;
+            } else {
+            */
+            	PutText(blank, word->first_attribute("CONTENT")->value(), roi, Scalar(0,0,0), FONT_HERSHEY_SIMPLEX,2,8);
+            //}
+            
+         }
 
       } //for textLine
 
