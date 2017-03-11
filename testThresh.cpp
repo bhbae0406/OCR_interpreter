@@ -343,6 +343,11 @@ double getOrigWidth(rapidxml::xml_node<>* block)
    return double(atoi(block->first_attribute("WIDTH")->value()));
 }
 
+double convertToPixel(double val)
+{
+   //assuming val is measured in 1/1200th of an inch
+   return (72.0 * (val / 1200.0));
+}
 
 //void displayImage(int, void*)
 //bool displayImage(int charA)
@@ -415,14 +420,19 @@ void displayImage()
             temp.height = prevLoc - vpos;
             temp.width = width;
 
-            master.push_back(temp);
-
             Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
 
             Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
          ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
 
             rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
+
+            temp.y = convertToPixel(vpos);
+            temp.x = convertToPixel(hpos);
+            temp.height = convertToPixel(prevLoc - vpos);
+            temp.width = convertToPixel(width);
+      
+            master.push_back(temp);
 
             process = false;
             width = 0;
@@ -438,11 +448,6 @@ void displayImage()
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
-
-         if (isLine(textLine, "June", 5))
-         {
-            cout << "GOT TO JUNE LINE" << '\n';
-         }
 
          /*
          if (numLine == 0)
@@ -507,12 +512,12 @@ void displayImage()
          }
          */
 
-         cout << "Dist1 = " << dist1 << '\n';
+         //cout << "Dist1 = " << dist1 << '\n';
 
          //tempDist1 = distAbove / (double)10;
          tempDist1 = 100.0;
 
-         cout << "TempDist1 = " << tempDist1 << '\n';
+         //cout << "TempDist1 = " << tempDist1 << '\n';
 
          
          //Idea - check all lines whose words begin with capital letter and
@@ -680,7 +685,7 @@ void displayImage()
          //if (dist1 > tempDist1)
          if ((process) && (curCat != prevCat))
          {
-            cout << "FOUND!" << '\n';
+            //cout << "FOUND!" << '\n';
             //tempVpos = prevLoc;
             Block temp;
 
@@ -695,11 +700,8 @@ void displayImage()
 
             temp.y = vpos;
             temp.x = hpos;
-            //temp.height = tempVpos - vpos;
             temp.height = prevLoc - temp.y;
             temp.width = width;
-
-            master.push_back(temp);
 
             //vpos = curLoc;
             //tempVpos = curLoc + getObjectHeight(textLine);
@@ -711,6 +713,14 @@ void displayImage()
 
 
             rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
+
+            temp.y = convertToPixel(vpos);
+            temp.x = convertToPixel(hpos);
+            temp.height = convertToPixel(prevLoc - temp.y);
+            temp.width = convertToPixel(width);
+
+            master.push_back(temp);
+
             /*
             if (prevCat == true)
             {
@@ -773,10 +783,25 @@ void displayImage()
       process = false;
    }
    */
+
+   //cout << "Max Dist: " << gMaxDist << '\n';
+   //cout << "Min Dist: " << gMinDist << '\n';
    
-   cout << "Max Dist: " << gMaxDist << '\n';
-   cout << "Min Dist: " << gMinDist << '\n';
-   
+   int countBlock = 0;
+
+   for (size_t i = 0; i < master.size(); i++)
+   {
+      cout << "Class = " << master[i].label << '\n';
+      cout << "height = " << master[i].height << '\n';
+      cout << "id = " << countBlock << '\n';
+      cout << "type = " << "rect" << '\n';
+      cout << "width = " << master[i].width << '\n';
+      cout << "x = " << master[i].x << '\n';
+      cout << "y = " << master[i].y << '\n';
+      cout << '\n';
+
+      countBlock++;
+   }
    
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
