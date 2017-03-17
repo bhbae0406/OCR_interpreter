@@ -35,6 +35,7 @@ int pageWidth = 19268;
 int pageHeight = 28892;
 int Xdimension = 9500;
 int Ydimension = 9600;
+int invalidLinesThresh = 20;
 
 Mat blank(Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
 
@@ -417,7 +418,6 @@ void displayImage()
    
    double prevLoc = 0.0;
    double curLoc = 0.0;
-
    double dist1 = 0.0;
    double dist2 = 0.0;
 
@@ -457,7 +457,7 @@ void displayImage()
    double printVPOS = 0;
    double printHeight = 0;
    double printWidth = 0;
-
+   int countInvalidLines = 0;
    for (rapidxml::xml_node<>* textBlock = first_textblock; textBlock != 0;
          textBlock = textBlock->next_sibling("TextBlock"))
    {
@@ -505,10 +505,17 @@ void displayImage()
       hpos = getOrigHPOS(textBlock);
       //width = getOrigWidth(textBlock);
       tempVpos = vpos;
-
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
+	 if(numLine) {
+	     if(prevLoc >= getOrigVPOS(textLine)) 
+		countInvalidLines++;
+  	 }        
+	 
+	 if(countInvalidLines > invalidLinesThresh){
+             std:cout << "This document is not worth processing!" << std::endl;	
+	 } 
          prevCat = curCat;
 
          /*
@@ -878,7 +885,8 @@ void displayImage()
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(50);
-   
+  
+   std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
    imwrite("segImage.jpg", blank, compression_params);
    
      
