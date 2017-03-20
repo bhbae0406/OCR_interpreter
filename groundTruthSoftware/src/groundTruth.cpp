@@ -203,7 +203,7 @@ void GroundTruth::beginTruthing(char* filename)
 
    for (size_t i = 0; i < labels.size(); i++)
    {
-      labels[i] = 'I';
+      labels[i] = 'N';
    }
 
    for (size_t idx = 0; idx < lines.size(); idx++)
@@ -213,6 +213,7 @@ void GroundTruth::beginTruthing(char* filename)
       imshow("Ground Truth", main_image);
 
       numUp = 0;
+      tempIdx = 0;
       for (;;)
       {
          userInput = waitKey(0);
@@ -262,6 +263,8 @@ void GroundTruth::beginTruthing(char* filename)
             if (numUp > 0)
                idx = tempIdx;
 
+            labels[idx] = 'I';
+
             drawLine(lines[idx], Scalar(255,255,255));
             break;
          }
@@ -287,6 +290,7 @@ void GroundTruth::beginTruthing(char* filename)
             if (tempIdx < 0)
             {
                cout << "INVALID IDX, CANNOT GO BACK FURTHER" << '\n';
+               idx = -1;
                break;
             }
 
