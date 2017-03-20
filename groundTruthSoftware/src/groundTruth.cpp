@@ -220,6 +220,9 @@ void GroundTruth::beginTruthing(char* filename)
          //user presses 'a'
          if (userInput == 97)
          {
+            if (numUp > 0)
+               idx = tempIdx;
+
             labels[idx] = 'a';
 
             for (;;)
@@ -239,7 +242,7 @@ void GroundTruth::beginTruthing(char* filename)
             for (size_t i = 0; i < (userInput % 48); i++)
             {
                drawLine(lines[idx + i], Scalar(255,0,0));
-               labels[idx + 1] = 'a';
+               labels[idx + i] = 'a';
             }
 
             idx = idx + numLines - 1;
@@ -250,6 +253,9 @@ void GroundTruth::beginTruthing(char* filename)
          //user presses 'd'
          else if (userInput == 100)
          {
+            if (numUp > 0)
+               idx = tempIdx;
+
             labels[idx] = 't';
             drawLine(lines[idx], Scalar(0,0,255));
             break;
@@ -258,6 +264,8 @@ void GroundTruth::beginTruthing(char* filename)
          //user presses 's'
          else if (userInput == 115)
          {
+            if (numUp > 0)
+               idx = tempIdx;
             labels[idx] = 's';
             drawLine(lines[idx], Scalar(0,255,255));
             break;
@@ -266,11 +274,14 @@ void GroundTruth::beginTruthing(char* filename)
          //user presses 'f' (IGNORE LINE)
          else if (userInput == 102)
          {
+            if (numUp > 0)
+               idx = tempIdx;
+
             drawLine(lines[idx], Scalar(255,255,255));
             break;
          }
+
          //press up arrow
-         
          else if (userInput == 65362)
          {
             storeIdx = idx;
@@ -302,16 +313,19 @@ void GroundTruth::beginTruthing(char* filename)
             numUp++;
          }
 
+         /*
          //user presses 'Enter' key to start undoing line
          else if (userInput == 10)
          {
             idx = tempIdx - 1;
             break;
          }
+         */
         
          //user presses 'b' -- to go back to current line after undoing
          else if (userInput == 98)
          {
+            reDraw(idx);
             idx = storeIdx - 1;
             break;
          }
