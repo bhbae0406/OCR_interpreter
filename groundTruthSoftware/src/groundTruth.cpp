@@ -218,27 +218,13 @@ void GroundTruth::beginTruthing(char* filename)
          userInput = waitKey(0);
 
          //user presses 'a'
-         if (userInput == 97)
+         if (userInput >= 49 && userInput <= 57)
          {
             if (numUp > 0)
                idx = tempIdx;
 
-            labels[idx] = 'a';
-
-            for (;;)
-            {
-               userInput = waitKey(0);
-
-               if (userInput < 49 || userInput > 57)
-               {
-                  cout << "INVALID NUMBER OF LINES. TRY AGAIN" << '\n';
-               }
-               else
-                  break;
-            }
-
             numLines = userInput % 48;
-
+            
             for (size_t i = 0; i < (userInput % 48); i++)
             {
                drawLine(lines[idx + i], Scalar(255,0,0));
@@ -246,7 +232,6 @@ void GroundTruth::beginTruthing(char* filename)
             }
 
             idx = idx + numLines - 1;
-
             break;
          }
 
