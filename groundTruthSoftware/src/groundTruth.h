@@ -30,7 +30,11 @@ class GroundTruth
       //also draws original image with words
       void initImage(char* filename);
 
+      void reDraw(int index);
+
       void beginTruthing(char* filename);
+
+      void writeToFile();
       
    private:
       /* vector "lines" stores pointers to each line in page.

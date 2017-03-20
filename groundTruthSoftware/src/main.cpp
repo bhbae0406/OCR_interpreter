@@ -16,6 +16,7 @@ int main(int argc, char* argv[])
 
    obj->initImage(argv[1]);
    obj->beginTruthing(argv[1]);
+   obj->writeToFile();
 
    return 0;
 }

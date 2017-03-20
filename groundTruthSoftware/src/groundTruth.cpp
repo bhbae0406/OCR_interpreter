@@ -8,6 +8,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <locale>
 #include <ctype.h>
+#include <fstream>
 
 using namespace rapidxml;
 using namespace std;
@@ -153,6 +154,18 @@ void GroundTruth::initImage(char* filename)
    //imshow("Ground Truth", main_image);
 }
 
+void GroundTruth::reDraw(int index)
+{
+   if (labels[index] == 'a')
+      drawLine(lines[index], Scalar(255,0,0));
+   else if (labels[index] == 's')
+      drawLine(lines[index], Scalar(0,255,255));
+   else if (labels[index] == 't')
+      drawLine(lines[index], Scalar(0,0,255));
+   else
+      drawLine(lines[index], Scalar(255,255,255));
+}
+
 void GroundTruth::beginTruthing(char* filename)
 {
    rapidxml::file<> xmlFile(filename);
@@ -168,6 +181,12 @@ void GroundTruth::beginTruthing(char* filename)
 
    int numLines = 0;
 
+   int tempIdx = 0;
+   int storeIdx = 0;
+   int numUp = 0;
+
+   bool stopTruthing = false;
+
    for (rapidxml::xml_node<>* textBlock = first_textBlock; textBlock != 0;
          textBlock = textBlock->next_sibling("TextBlock"))
    {
@@ -182,16 +201,23 @@ void GroundTruth::beginTruthing(char* filename)
 
    labels.resize(lines.size());
 
+   for (size_t i = 0; i < labels.size(); i++)
+   {
+      labels[i] = 'I';
+   }
+
    for (size_t idx = 0; idx < lines.size(); idx++)
    {
-      //draws bounding box of line in brown
+      //draws bounding box of line in green 
       drawLine(lines[idx], Scalar(0,255,0));
       imshow("Ground Truth", main_image);
 
+      numUp = 0;
       for (;;)
       {
          userInput = waitKey(0);
 
+         //user presses 'a'
          if (userInput == 97)
          {
             labels[idx] = 'a';
@@ -213,6 +239,7 @@ void GroundTruth::beginTruthing(char* filename)
             for (size_t i = 0; i < (userInput % 48); i++)
             {
                drawLine(lines[idx + i], Scalar(255,0,0));
+               labels[idx + 1] = 'a';
             }
 
             idx = idx + numLines - 1;
@@ -220,24 +247,84 @@ void GroundTruth::beginTruthing(char* filename)
             break;
          }
 
-         else if (userInput == 116)
+         //user presses 'd'
+         else if (userInput == 100)
          {
             labels[idx] = 't';
             drawLine(lines[idx], Scalar(0,0,255));
             break;
          }
+
+         //user presses 's'
          else if (userInput == 115)
          {
             labels[idx] = 's';
             drawLine(lines[idx], Scalar(0,255,255));
             break;
          }
-         //press up arrow
-         else if (userInput == 65362)
+
+         //user presses 'f' (IGNORE LINE)
+         else if (userInput == 102)
          {
-            idx = idx - 2;
+            drawLine(lines[idx], Scalar(255,255,255));
             break;
          }
+         //press up arrow
+         
+         else if (userInput == 65362)
+         {
+            storeIdx = idx;
+
+            if (numUp > 0)
+            {
+               reDraw(tempIdx);
+               reDraw(tempIdx + 1);
+            }
+
+            cout << "GOT 1" << '\n';
+
+            if (numUp > 0)
+               tempIdx = tempIdx - 1;
+            else
+               tempIdx = idx - 1;
+
+            if (tempIdx < 0)
+            {
+               cout << "INVALID IDX, CANNOT GO BACK FURTHER" << '\n';
+               break;
+            }
+
+            drawLine(lines[tempIdx], Scalar(0,255,0));
+            imshow("Ground Truth", main_image);
+            cout << "GOT 2" << '\n';
+            cout << "TEMPIDX = " << tempIdx << '\n';
+
+            numUp++;
+         }
+
+         //user presses 'Enter' key to start undoing line
+         else if (userInput == 10)
+         {
+            idx = tempIdx - 1;
+            break;
+         }
+        
+         //user presses 'b' -- to go back to current line after undoing
+         else if (userInput == 98)
+         {
+            idx = storeIdx - 1;
+            break;
+         }
+
+         //user presses 'p' -- to stop truthing and write labels.txt
+         //prints out labels done to this point
+         else if (userInput == 112)
+         {
+            stopTruthing = true;
+            break;
+         }
+
+         //user presses an invalid key
          else
          {
             cout << "UNACCEPTABLE KEY. TRY AGAIN." << '\n';
@@ -245,29 +332,19 @@ void GroundTruth::beginTruthing(char* filename)
             drawLine(lines[idx], Scalar(0,0,0));
          }
       }
+
+      if (stopTruthing)
+         break;
    }
 }
-            
 
-         
-
-
-      
-
-
-
-
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
+void GroundTruth::writeToFile()
+{
+   ofstream myfile;
+   myfile.open("labels.txt");
+   for (size_t idx = 0; idx < labels.size(); idx++)
+   {
+      myfile << idx << "\t" << labels[idx] << '\n';
+   }
+   myfile.close();
+}
