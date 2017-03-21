@@ -1,5 +1,4 @@
 The following are the invalid files not worth processing: 
-
-./input/0036
-./input/0034
-./input/0045
+0036.xml
+0034.xml
+0045.xml

@@ -457,7 +457,7 @@ void displayImage(string filename)
 	 
 	 if(countInvalidLines > invalidLinesThresh){
 	     // write to error.txt
-            std:cout << "Document" << filename << " is not worth processing!" << std::endl;	
+            std:cout << filename << " is not worth processing!" << std::endl;	
 	    ofstream invalidFiles;
             invalidFiles.open("invalidFiles.txt", std::ios::app);
             invalidFiles << filename << '\n';
@@ -627,9 +627,10 @@ void displayImage(string filename)
 
    } //for textblock
 
+   string file(filename.begin(), filename.end() - 4);
    int countBlock = 0;
    ofstream o;
-   o.open("output_" + filename + ".txt");
+   o.open("./output/blockOut/output_" + file + ".txt");
 
    for (size_t i = 0; i < master.size(); i++)
    {
@@ -650,14 +651,14 @@ void displayImage(string filename)
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(50);
   
-   std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
-   imwrite("segImage.jpg", blank, compression_params);
+   std::cout << filename << " processed! Number of invalid lines: " << countInvalidLines << std::endl; 
+   imwrite("./output/segImage/segImage" + file + ".jpg", blank, compression_params);
    
    //imshow("Threshold Result", blank);
 }
 int main(int argc, char* argv[])
 {
-   if (argc != 2)
+   if (argc != 3)
    {
       cerr << "Program Usage: xml_image [xml_file.xml]" << '\n';
       exit(1);
@@ -666,7 +667,8 @@ int main(int argc, char* argv[])
 
    auto const found = inputFile.find_last_of('.');
    auto filename = inputFile.substr(0,found);
-
+   filename = argv[2];
+   
    rapidxml::file<> xmlFile(argv[1]);
    rapidxml::xml_document<> doc;
    doc.parse<0>(xmlFile.data());
