@@ -35,7 +35,7 @@ int pageWidth = 19268;
 int pageHeight = 28892;
 int Xdimension = 9500;
 int Ydimension = 9600;
-int invalidLinesThresh = 20;
+int invalidLinesThresh = 50;
 
 Mat blank(Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
 
@@ -719,7 +719,9 @@ int main(int argc, char* argv[])
 
    To Display the trackbars, uncommment me!*/ 
    displayImage(filename);
-   
+   ofstream o;
+   o.open("validFiles.txt", std::ios::app);
+   o << filename << std::endl;
    //waitKey();
 
    return 0;

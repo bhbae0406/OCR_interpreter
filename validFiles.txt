@@ -1,0 +1,10 @@
+The following are the valid files we found:
+
+./input/0006
+./input/0033
+./input/0005
+./input/0259
+./input/0281
+./input/0003
+./input/0037
+./input/0035
