@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <functional>
 #include <boost/algorithm/string/predicate.hpp>
-
+#include <fstream>
 //#include "parser.h"
 
 using namespace rapidxml;
@@ -106,8 +106,6 @@ double getWidthCharRatio(rapidxml::xml_node<>* textLine, bool countWord)
       wordCount += 1;
    }
 
-   //double width = atoi(textLine->first_attribute("WIDTH")->value());
-
    width = Xdimension * (width / (double)pageWidth);
 
    if (countWord)
@@ -159,13 +157,6 @@ void drawBlock(rapidxml::xml_node<>* block, cv::Scalar color)
 
    //note - for Scalar - openCV uses BGR color format
    //therefore - Scalar(0, 0, 255) is solid red 
-   
-   /*
-   Point rP1((int)(getHPOS(block)), (int)(getVPOS(block)));
-   Point rP2(rP1.x + (int)(getObjectWidth(block)),
-         rP1.y + (int)(getObjectHeight(block)));
-
-   */
    rectangle(blank, rP1, rP2, color, 7);
 }
 
@@ -295,13 +286,6 @@ double distNextFour(rapidxml::xml_node<>* textLine)
          if ((tempLine = (tempLine->next_sibling("TextLine"))) != NULL)
          {
             curLoc = getVPOS(tempLine);
-
-            /*
-            if ((tempLine = (tempLine->next_sibling("TextLine"))) != NULL)
-            {
-               curLoc = getVPOS(tempLine);
-            }
-            */
          }
          
          
@@ -313,30 +297,11 @@ double distNextFour(rapidxml::xml_node<>* textLine)
    return dist;
 }
 
-/*
-bool distSecond(rapidxml::xml_node<>* textLine)
-{
-   double curLoc = getVPOS(textLine) + getObjectHeight(textLine);
-   double nextLoc = curLoc;
-
-   rapidxml::xml_node<>* tempLine = NULL;
-
-   if ((tempLine = (textLine->next_sibling("TextLine"))) != NULL)
-   {
-      nextLoc = getVPOS(tempLine);
-   }
-
-   if (
-
-*/
-
 double charAreaRatio(rapidxml::xml_node<>* textLine)
 {
    string text;
    double area = 0.0;
    int numChar = 0.0;
-
-   //double avgRatio = 0.0;
 
    vector<double> ratio;
 
@@ -356,7 +321,6 @@ double charAreaRatio(rapidxml::xml_node<>* textLine)
 
    int midIdx = (ratio.size()) / 2;
 
-   //cout << "Ratio = " << ratio[midIdx] << '\n';
    return ratio[midIdx];
 }
 
@@ -400,11 +364,8 @@ double convertToPixel(double val)
 
 //void displayImage(int, void*)
 //bool displayImage(int charA)
-void displayImage()
+void displayImage(string filename)
 {
-   //double min = 1000.0;
-   //double max = 0.0;
-   //double ratio = 0.0;
    double tempRatio = 0.0;
    double tempWordRatio = 0.0;
    double tempHeight = 0.0;
@@ -465,7 +426,6 @@ void displayImage()
 
       if (process && (numLine > 0))
       {
-            //tempVpos = prevLoc;
             Block temp;
 
             if (prevCat)
@@ -503,7 +463,6 @@ void displayImage()
 
       vpos = getOrigVPOS(textBlock);
       hpos = getOrigHPOS(textBlock);
-      //width = getOrigWidth(textBlock);
       tempVpos = vpos;
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
@@ -514,95 +473,19 @@ void displayImage()
   	 }        
 	 
 	 if(countInvalidLines > invalidLinesThresh){
-             std:cout << "This document is not worth processing!" << std::endl;	
+	     // write to error.txt
+            std:cout << "Document" << filename << " is not worth processing!" << std::endl;	
+	    ofstream invalidFiles;
+            invalidFiles.open("invalidFiles.txt", std::ios::app);
+            invalidFiles << filename << '\n';
+            invalidFiles.close();
+            exit(1);
 	 } 
          prevCat = curCat;
-
-         /*
-         if (numLine == 0)
-         {
-            prevLoc = getOrigVPOS(textBlock->first_node("TextLine")) +
-               getOrigHeight(textBlock->first_node("TextLine"));
-         }
-         */
-
          numLine++;
-         /*
-
-         if (isLine(textLine, "Townseiul", 3))
-         {
-            cout << "Townseiul bottomL = " << getOrigVPOS(textLine)
-               + getOrigHeight(textLine) << '\n';
-         }
-
-         if (isLine(textLine, "Nears.", 3))
-         {
-            cout << "Nears. topL = " << getOrigVPOS(textLine) << '\n';
-            cout << "Nears. bottomL = " << getOrigVPOS(textLine) +
-               getOrigHeight(textLine) << '\n';
-            //cout << "Nears. height = " << getObjectHeight(textLine) << '\n';
-         }
-
-         if (isLine(textLine, "Dies", 5))
-         {
-            cout << "Canton topL = " << getOrigVPOS(textLine) << '\n';
-            cout << "Canton bottomL = " << getOrigVPOS(textLine) +
-               getOrigHeight(textLine) << '\n';
-         }
-
-         if (isLine(textLine, "Quell", 3))
-         {
-            cout << "Quell topL = " << getOrigVPOS(textLine) << '\n';
-            cout << "Quell bottomL = " << getOrigVPOS(textLine) +
-               getOrigHeight(textLine) << '\n';
-         }
-
-         if (isLine(textLine, "Fracas", 3))
-         {
-            cout << "Fracas topL = " << getOrigVPOS(textLine) << '\n';
-            cout << "Fracas bottomL = " << getOrigVPOS(textLine) + 
-               getOrigHeight(textLine) << '\n';
-         }
-
-         */
-
-         //check previous 4 lines
-         
-         /*
-         if (numLine == 0)
-         {
-            dist1 = 0;
-         }
-         else
-         {
-            curLoc = getOrigVPOS(textLine);
-            dist1 = curLoc - prevLoc;
-            prevLoc = curLoc + getOrigHeight(textLine);
-         }
-         */
-
-         //cout << "Dist1 = " << dist1 << '\n';
-
          //tempDist1 = distAbove / (double)10;
          tempDist1 = 100.0;
-
-         //cout << "TempDist1 = " << tempDist1 << '\n';
-
-         
-         //Idea - check all lines whose words begin with capital letter and
-         //check the min distance of that line from the line above and below it.
-         //Make this a threshold -- TRY THIS
-         
-         //check next 4 lines
          dist2 = distNextFour(textLine);
-
-         /*
-         if (dist1 < dist2) 
-            maxDist = dist1;
-         else
-            maxDist = dist2;
-         */
-         
          cArea = charAreaRatio(textLine);
          temp = getWidthCharRatio(textLine, true);
 
@@ -615,66 +498,24 @@ void displayImage()
             gMinDist = dist1;
          }
          
-         //distThresh = 2734;
-         //distThresh = 2698;
          distThresh = 1611;
-         //distThresh = charA;
          tempDist = distThresh / (double)10;
-         //tempDist = 84.6;
-
-         //widthCharRatio = 341;
          tempRatio = widthCharRatio / (double)10;
          tempRatio += 1.64348; //so min is 1.64348
-
          tempWordRatio = widthWordRatio / (double)10;
          tempWordRatio += 60.0;
-
-         //heightThresh = heightVal;
-
          heightThresh = 438;
-         //heightThresh = 444;
          tempHeight = heightThresh / (double)10;
          tempHeight += 11.9618;
-
-         //charArea = 5561;
-         //BELOW charArea - may work ???
          charArea = 4577;
-         //charArea = charA; 
          tempCA = charArea / (double)10;
          tempCA += 315;
 
-
-         /* Absolute - if all words are capitalized, then no false negatives
-          * for titles. Also, if all letters are capitalized, it is indeed a title.
-          */
-          
-         /*
-         if (capLine(textLine, false) || capLine(textLine, true))
-         {
-            drawBlock(textLine, Scalar(0,0,255));
-         }
-
-         else
-         {
-            //false positives - when article text is considered a title
-            drawBlock(textLine, Scalar(255,0,0));
-         }
-         */
-         
-         /*
-         if (isLine(textLine, "Police.", 3))
-         {
-            cout << "tempHeight = " << tempHeight << '\n';
-            cout << "getObjectHeight = " << getObjectHeight(textLine) << '\n';
-         }
-         */
-        
          if ((((getObjectHeight(textLine) > tempHeight) &&
                      capLine(textLine, false))||
                (capLine(textLine, true))))
 
          {
-            //drawBlock(textLine, Scalar(0,0,255));
             title = true;
          }
 
@@ -701,7 +542,6 @@ void displayImage()
                   if (boost::iequals(word1, "continued") &&
                         boost::iequals(word2, "on"))
                   {
-                     //drawBlock(textLine, Scalar(255,0,0));
                      title = false;
                   }
                   
@@ -709,31 +549,24 @@ void displayImage()
                   else
                   {
                  
-                     //drawBlock(textLine, Scalar(0,0,255));
                      title = true;
                   } 
                }
                else
                {
-                  //drawBlock(textLine, Scalar(255,0,0));
                   title = false;
                }
             }
 
             else
             {
-               //drawBlock(textLine, Scalar(255,0,0));
                title = false;
             }
          }
 
          curCat = title;
-
-         //if (dist1 > tempDist1)
          if ((process) && (curCat != prevCat))
          {
-            //cout << "FOUND!" << '\n';
-            //tempVpos = prevLoc;
             Block temp;
 
             if (prevCat == true)
@@ -750,9 +583,6 @@ void displayImage()
             temp.height = prevLoc - temp.y;
             temp.width = width;
 
-            //vpos = curLoc;
-            //tempVpos = curLoc + getObjectHeight(textLine);
-
             Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
 
             Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
@@ -763,26 +593,12 @@ void displayImage()
             else
                rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
 
-            //rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
-
             temp.y = convertToPixel(vpos);
             temp.x = convertToPixel(hpos);
             temp.height = convertToPixel(prevLoc - temp.y);
             temp.width = convertToPixel(width);
 
             master.push_back(temp);
-
-            /*
-            if (prevCat == true)
-            {
-               //rectangle(blank, rP1, rP2, Scalar(100,100,0), 17);
-            }
-            else
-            {
-               //rectangle(blank, rP1, rP2, Scalar(200,100,200), 17);
-            }
-            */
-
             process = false;
             width = 0;
          }
@@ -805,9 +621,6 @@ void displayImage()
 
          prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
 
-         //prevCat = curCat;
-
-
 	for (xml_node<> * word = textLine->first_node("String"); word != 0;
                word = word->next_sibling("String"))
          {
@@ -824,48 +637,13 @@ void displayImage()
 
             cv::Rect roi(p1.x, p1.y, (p2.x-p1.x), (p2.y-p1.y));
 
-            /*
-            if ((p1.x < lP1.x) || (p1.y<lP1.y) || (p2.x > lP2.x) || (p2.y > lP2.y)) {
-            	continue;
-            } else {
-            */
             	PutText(blank, word->first_attribute("CONTENT")->value(), roi, Scalar(0,0,0), FONT_HERSHEY_SIMPLEX,2,8);
-            //}
-            
          }
 
       } //for textLine
 
    } //for textblock
 
-   /*
-   if (process)
-   {
-      tempVpos = prevLoc;
-      Block temp;
-      temp.label = "Title";
-      temp.y = vpos;
-      temp.x = hpos;
-      temp.height = tempVpos - vpos;
-      temp.width = width;
-
-      master.push_back(temp);
-
-      Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
-
-      Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
-   ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
-
-      rectangle(blank, rP1, rP2, Scalar(0,0,0), 17);
-
-      process = false;
-   }
-   */
-
-   //cout << "Max Dist: " << gMaxDist << '\n';
-   //cout << "Min Dist: " << gMinDist << '\n';
-   
-   
    int countBlock = 0;
 
    for (size_t i = 0; i < master.size(); i++)
@@ -889,111 +667,8 @@ void displayImage()
    std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
    imwrite("segImage.jpg", blank, compression_params);
    
-     
-
    //imshow("Threshold Result", blank);
-
-   //return reached;
 }
-
-/*
-void displayBlock(int, void*)
-{
-   //double prev_v = getVPOS(first_textblock);
-   xml_node<>* temp = NULL;
-   double prev_v = 0.0;
-   //double prev_h1 = getHPOS(first_textblock);
-   double prev_h1 = 0.0;
-   double prev_h2 = prev_h1 + getObjectWidth(first_textblock);
-   double tempBlock = 10000.0;
-
-   //Point p1(prev_h1, prev_v);
-   //Point p2(prev_h2, prev_v);
-   Point p1;
-   Point p2;
-   //Point p3;
-   //Point p4;
-
-   double min = 100000;
-   double max = 0;
-   double diff = 0;
-   double lineV = 0;
-   double horizPos = 0;
-   double bWidth = 0;
-   
-   for (xml_node<>* textBlock = first_textblock; textBlock != 0;
-         textBlock = textBlock->next_sibling("TextBlock"))
-   {
-      temp = textBlock->first_node("TextLine");
-      bWidth = getObjectWidth(textBlock);
-      horizPos = getHPOS(textBlock);
-
-      if (temp != NULL)
-      {
-         prev_v = getVPOS(textBlock->first_node("TextLine"));
-         //cout << "H" << '\n';
-         
-         for (rapidxml::xml_node<>* textLine = temp->
-               next_sibling("TextLine"); textLine != 0; 
-               textLine = textLine->next_sibling("TextLine"))
-         {
-            tempBlock = blockThresh / (double)10;
-            //tempBlock += 6.64544;
-            
-            lineV = getVPOS(textLine);
-            diff = abs(prev_v - lineV);
-            
-            
-           
-            if (diff < min)
-            {
-               min = diff;
-            }
-            if (diff > max)
-            {
-               max = diff;
-            }
-            
-            
-            
-            if (abs(prev_v - getVPOS(textLine)) > tempBlock) 
-            {
-               line(blank, Point(horizPos, lineV), Point(horizPos + bWidth, lineV),
-                     Scalar(255,0,0), 10);
-               
-
-               
-               p1 = Point(
-               p1 = Point(prev_h1, prev_v);
-               p4 = Point(prev_h2, prev_v);
-               rectangle(blank, p1, p4, Scalar(0,0,255), 7);
-               // segmentBlock(p1, p2, p3, p4 , Scalar(0,0,255));
-
-               prev_v = getVPOS(textLine);
-               prev_h1 = getHPOS(textLine);
-               prev_h2 = prev_h1 + getObjectWidth(textLine);
-               p1 = Point(prev_h1, prev_v);
-               p2 = Point(prev_h2, prev_v);
-            } else {
-               prev_v = getVPOS(textLine);
-               prev_h1 = getHPOS(textLine);
-               prev_h2 = prev_h1 + getObjectWidth(textLine);
-            }
-           
-             }
-            prev_v = getVPOS(textLine);
-            
-         }
-      }
-   }
-
-   cout << "Min: " << min << '\n';
-   cout << "Max: " << max << '\n';
-  
-   imshow("Threshold Result", blank);
-}
-*/
-
 int main(int argc, char* argv[])
 {
    if (argc != 2)
@@ -1021,7 +696,7 @@ int main(int argc, char* argv[])
    namedWindow("Threshold Result", WINDOW_NORMAL);
    
    
-   /*
+   /* To Display the trackbars, uncommment me! 
    createTrackbar("heightThresh", "Threshold Result", &heightThresh, 3071,
          displayImage);
 
@@ -1035,38 +710,12 @@ int main(int argc, char* argv[])
    createTrackbar("distThresh", "Threshold Result", &distThresh, 9100,
          displayImage);
    createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
-  
-
-   
    createTrackbar("distAbove", "Threshold Result", &distAbove, 15080,
          displayImage);
-   */
+   displayImage(0,0);
 
-   
-   
-   
-   //createTrackbar("distThresh", "Threshold Result", &dist, 
-   
-   //createTrackbar("BlockHeight", "Threshold Result", &blockThresh, 7164, displayBlock);
-   
-   //cout << "Height = " << Ydimension * (168.0/pageHeight) << '\n';
-
-
-   //displayImage(0,0);
-   
-   /*
-   for (int i = 2698; i > 400; i--)
-   {
-      cout << "charArea = " << i << '\n';
-      if(displayImage(i))
-      {
-         cout << "Reached, I = " << i << '\n';
-         break;
-      }
-   }
-   */
-
-   displayImage();
+   To Display the trackbars, uncommment me!*/ 
+   displayImage(filename);
    
    //waitKey();
 
