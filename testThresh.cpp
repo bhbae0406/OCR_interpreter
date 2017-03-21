@@ -201,10 +201,6 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
    {
       if (isalpha(text[0]))
       {
-         if (isLine(textLine, "Police.", 3))
-         {
-            cout << "Word Count Text = " << text << '\n';
-         }
          numWord++;
       }
 
@@ -213,11 +209,6 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
       
       if (isalpha(text[0]) && (isupper(text[0])) && (text.length() >= 1))
       {
-         if (isLine(textLine, "Police.", 3))
-         {
-            cout << "Cap Word Text = " << text << '\n';
-         }
-
          numFirstCap++;
          //cap = false;
       }
@@ -236,14 +227,6 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
       }
       
    }
-
-   
-   if (isLine(textLine, "Police.", 3))
-   {
-      cout << "numFirstCap = " << numFirstCap << '\n';
-      cout << "numWord = " << numWord << '\n';
-   }
-   
 
    if (allCaps)
    {
