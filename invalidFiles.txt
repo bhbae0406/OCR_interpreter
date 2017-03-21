@@ -1,0 +1,9 @@
+The following are the invalid files not worth processing: 
+0034
+./input/0036
+./input/0005
+./input/0034
+./input/0003
+./input/0045
+./input/0037
+./input/0035

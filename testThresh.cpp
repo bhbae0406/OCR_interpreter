@@ -645,21 +645,24 @@ void displayImage(string filename)
    } //for textblock
 
    int countBlock = 0;
+   ofstream o;
+   o.open("output_" + filename + ".txt");
 
    for (size_t i = 0; i < master.size(); i++)
    {
-      cout << "Class = " << master[i].label << '\n';
-      cout << "height = " << master[i].height << '\n';
-      cout << "id = " << countBlock << '\n';
-      cout << "type = " << "rect" << '\n';
-      cout << "width = " << master[i].width << '\n';
-      cout << "x = " << master[i].x << '\n';
-      cout << "y = " << master[i].y << '\n';
-      cout << '\n';
+      o << "Class = " << master[i].label << '\n';
+      o << "height = " << master[i].height << '\n';
+      o << "id = " << countBlock << '\n';
+      o << "type = " << "rect" << '\n';
+      o << "width = " << master[i].width << '\n';
+      o << "x = " << master[i].x << '\n';
+      o << "y = " << master[i].y << '\n';
+      o << '\n';
 
       countBlock++;
    }
-   
+   o.close();
+
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(50);
