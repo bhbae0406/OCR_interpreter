@@ -240,8 +240,13 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
    }
    else
    {
+      if (isLine(textLine, "Speers", 3))
+      {
+         cout << "RATIO = " << ((double)numFirstCap / numWord) << '\n';
+      }
+
       //if (cap == true) //&& numWord > 1)
-      if (((double)numFirstCap / numWord) >= 0.8)
+      if (((double)numFirstCap / numWord) >= 0.74)
          return true;
       else
          return false;
@@ -265,7 +270,6 @@ double distNextFour(rapidxml::xml_node<>* textLine)
       {
          curLoc = getVPOS(tempLine);
           
-
          if ((tempLine = (tempLine->next_sibling("TextLine"))) != NULL)
          {
             curLoc = getVPOS(tempLine);
@@ -426,10 +430,13 @@ void displayImage(string filename)
             Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
          ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
 
+            //DRAW BLOCK
+            /*
             if (temp.label == "Title")
                rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
             else
                rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
+            */
 
             temp.y = convertToPixel(vpos);
             temp.x = convertToPixel(hpos);
@@ -462,7 +469,7 @@ void displayImage(string filename)
             invalidFiles.open("invalidFiles.txt", std::ios::app);
             invalidFiles << filename << '\n';
             invalidFiles.close();
-            exit(1);
+            //exit(1);
 	 } 
          prevCat = curCat;
          numLine++;
@@ -493,21 +500,47 @@ void displayImage(string filename)
          charArea = 4577;
          tempCA = charArea / (double)10;
          tempCA += 315;
+         //changes
+         tempCA = 785;
 
          if ((((getObjectHeight(textLine) > tempHeight) &&
                      capLine(textLine, false))||
                (capLine(textLine, true))))
 
          {
+            if (isLine(textLine, "Speers", 3))
+            {
+               cout << "GOT -1" << '\n';
+            }
+
             title = true;
+            drawBlock(textLine, Scalar(0,0,255));
          }
 
          else
          {
+            if (isLine(textLine, "Speers", 3))
+            {
+               cout << "GOT 0" << '\n';
+               //cout << capLine(textLine, false) << '\n';
+            }
+
             if (capLine(textLine, false) && (cArea > tempCA))
             {
+               if (isLine(textLine, "Speers", 3))
+               {
+                  cout << "GOT 1" << '\n';
+                  cout << "cArea = " << cArea << '\n';
+                  cout << "tempCA = " << tempCA << '\n';
+               }
+
                if ((dist2 >= tempDist))// || (dist1 >= tempDist1))
                {
+                  if (isLine(textLine, "Speers", 3))
+                  {
+                     cout << "GOT 2" << '\n';
+                  }
+
                   if (textLine->first_node("String") != NULL)
                   {
                      word1 = textLine->first_node("String")->
@@ -526,24 +559,26 @@ void displayImage(string filename)
                         boost::iequals(word2, "on"))
                   {
                      title = false;
+                     drawBlock(textLine, Scalar(255,0,0));
                   }
                   
-
                   else
                   {
-                 
                      title = true;
+                     drawBlock(textLine, Scalar(0,0,255));
                   } 
                }
                else
                {
                   title = false;
+                  drawBlock(textLine, Scalar(255,0,0));
                }
             }
 
             else
             {
                title = false;
+               drawBlock(textLine, Scalar(255,0,0));
             }
          }
 
@@ -571,10 +606,11 @@ void displayImage(string filename)
             Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
          ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
          
-            if (temp.label == "Title")
-               rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
-            else
-               rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
+            //DRAW BLOCK
+            //if (temp.label == "Title")
+               //rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
+            //else
+               //rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
 
             temp.y = convertToPixel(vpos);
             temp.x = convertToPixel(hpos);
