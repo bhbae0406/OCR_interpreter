@@ -1,0 +1,624 @@
+Class = Article
+height = 45.12
+id = 0
+type = rect
+width = 768
+x = 185.28
+y = 59.52
+
+Class = Title
+height = 98.352
+id = 1
+type = rect
+width = 101.28
+x = 49.92
+y = 64.8
+
+Class = Article
+height = 70.752
+id = 2
+type = rect
+width = 130.56
+x = 973.44
+y = 64.8
+
+Class = Title
+height = 87.6144
+id = 3
+type = rect
+width = 129.6
+x = 973.92
+y = 71.76
+
+Class = Article
+height = 100.55
+id = 4
+type = rect
+width = 130.56
+x = 973.44
+y = 92.16
+
+Class = Title
+height = 127.238
+id = 5
+type = rect
+width = 178.32
+x = 46.08
+y = 123.36
+
+Class = Article
+height = 129.523
+id = 6
+type = rect
+width = 92.16
+x = 246.24
+y = 125.28
+
+Class = Title
+height = 129.72
+id = 7
+type = rect
+width = 488.64
+x = 452.88
+y = 126
+
+Class = Article
+height = 131.069
+id = 8
+type = rect
+width = 151.2
+x = 958.8
+y = 131.52
+
+Class = Title
+height = 122.4
+id = 9
+type = rect
+width = 534.72
+x = 35.04
+y = 154.56
+
+Class = Title
+height = 268.502
+id = 10
+type = rect
+width = 533.28
+x = 576
+y = 156.96
+
+Class = Title
+height = 4.32
+id = 11
+type = rect
+width = 279.84
+x = 679.92
+y = 279.6
+
+Class = Title
+height = 72.72
+id = 12
+type = rect
+width = 131.04
+x = 33.12
+y = 287.04
+
+Class = Title
+height = 455.338
+id = 13
+type = rect
+width = 129.84
+x = 35.04
+y = 383.04
+
+Class = Article
+height = 907.435
+id = 14
+type = rect
+width = 130.8
+x = 31.68
+y = 496.08
+
+Class = Title
+height = 912.221
+id = 15
+type = rect
+width = 107.28
+x = 31.44
+y = 940.32
+
+Class = Article
+height = 1108.29
+id = 16
+type = rect
+width = 130.8
+x = 30.72
+y = 972.48
+
+Class = Title
+height = 1108.52
+id = 17
+type = rect
+width = 99.84
+x = 45.36
+y = 1172.64
+
+Class = Article
+height = 1302.44
+id = 18
+type = rect
+width = 131.52
+x = 30
+y = 1184.64
+
+Class = Title
+height = 1363.41
+id = 19
+type = rect
+width = 131.04
+x = 30
+y = 1392.48
+
+Class = Article
+height = 206.4
+id = 20
+type = rect
+width = 131.52
+x = 29.76
+y = 1465.2
+
+Class = Title
+height = 72
+id = 21
+type = rect
+width = 248.16
+x = 170.4
+y = 288.96
+
+Class = Title
+height = 370.781
+id = 22
+type = rect
+width = 95.04
+x = 203.52
+y = 364.32
+
+Class = Article
+height = 627.298
+id = 23
+type = rect
+width = 129.12
+x = 169.44
+y = 413.04
+
+Class = Title
+height = 815.578
+id = 24
+type = rect
+width = 131.52
+x = 169.2
+y = 671.04
+
+Class = Article
+height = 434.64
+id = 25
+type = rect
+width = 133.44
+x = 167.28
+y = 873.6
+
+Class = Title
+height = 75.84
+id = 26
+type = rect
+width = 249.12
+x = 174.96
+y = 1339.44
+
+Class = Article
+height = 237.84
+id = 27
+type = rect
+width = 129.36
+x = 166.32
+y = 1434
+
+Class = Article
+height = 28.32
+id = 28
+type = rect
+width = 197.28
+x = 298.56
+y = 364.32
+
+Class = Article
+height = 627.283
+id = 29
+type = rect
+width = 130.08
+x = 304.08
+y = 413.28
+
+Class = Title
+height = 813.149
+id = 30
+type = rect
+width = 133.44
+x = 300.72
+y = 671.52
+
+Class = Article
+height = 1238.33
+id = 31
+type = rect
+width = 134.4
+x = 299.52
+y = 873.12
+
+Class = Title
+height = 1230.21
+id = 32
+type = rect
+width = 128.64
+x = 300.72
+y = 1300.56
+
+Class = Article
+height = 238.56
+id = 33
+type = rect
+width = 132
+x = 300.72
+y = 1434.24
+
+Class = Article
+height = 26.88
+id = 34
+type = rect
+width = 88.32
+x = 461.28
+y = 289.92
+
+Class = Title
+height = 482.52
+id = 35
+type = rect
+width = 128.88
+x = 441.84
+y = 342
+
+Class = Article
+height = 781.042
+id = 36
+type = rect
+width = 129.12
+x = 439.68
+y = 506.64
+
+Class = Title
+height = 775.099
+id = 37
+type = rect
+width = 92.88
+x = 457.2
+y = 817.68
+
+Class = Article
+height = 1087.58
+id = 38
+type = rect
+width = 129.12
+x = 438.96
+y = 829.68
+
+Class = Title
+height = 1081.03
+id = 39
+type = rect
+width = 114.96
+x = 445.92
+y = 1142.88
+
+Class = Article
+height = 1318.88
+id = 40
+type = rect
+width = 128.88
+x = 438
+y = 1154.64
+
+Class = Title
+height = 1395.16
+id = 41
+type = rect
+width = 128.16
+x = 438
+y = 1391.28
+
+Class = Article
+height = 181.2
+id = 42
+type = rect
+width = 128.64
+x = 438
+y = 1492.32
+
+Class = Title
+height = 72.72
+id = 43
+type = rect
+width = 128.4
+x = 576.48
+y = 289.44
+
+Class = Title
+height = 481.637
+id = 44
+type = rect
+width = 129.12
+x = 576.48
+y = 384.72
+
+Class = Article
+height = 965.458
+id = 45
+type = rect
+width = 129.84
+x = 574.32
+y = 509.04
+
+Class = Title
+height = 946.781
+id = 46
+type = rect
+width = 94.08
+x = 592.56
+y = 1000.32
+
+Class = Article
+height = 1329.09
+id = 47
+type = rect
+width = 130.56
+x = 571.92
+y = 1012.56
+
+Class = Title
+height = 1394.56
+id = 48
+type = rect
+width = 129.12
+x = 583.68
+y = 1421.28
+
+Class = Article
+height = 1480.05
+id = 49
+type = rect
+width = 129.6
+x = 572.16
+y = 1492.56
+
+Class = Title
+height = 1494.51
+id = 50
+type = rect
+width = 91.92
+x = 590.64
+y = 1583.52
+
+Class = Article
+height = 79.44
+id = 51
+type = rect
+width = 128.64
+x = 571.68
+y = 1595.52
+
+Class = Article
+height = 19.2
+id = 52
+type = rect
+width = 186.72
+x = 749.76
+y = 301.92
+
+Class = Title
+height = 6.48
+id = 53
+type = rect
+width = 96.72
+x = 788.64
+y = 385.44
+
+Class = Article
+height = 77.52
+id = 54
+type = rect
+width = 254.16
+x = 715.2
+y = 826.08
+
+Class = Title
+height = 1049.45
+id = 55
+type = rect
+width = 129.6
+x = 710.16
+y = 921.12
+
+Class = Article
+height = 268.56
+id = 56
+type = rect
+width = 132.96
+x = 708
+y = 1122.72
+
+Class = Title
+height = 58.56
+id = 57
+type = rect
+width = 246.96
+x = 712.8
+y = 1421.28
+
+Class = Article
+height = 181.2
+id = 58
+type = rect
+width = 135.6
+x = 703.44
+y = 1494
+
+Class = Title
+height = 66.48
+id = 59
+type = rect
+width = 128.4
+x = 845.76
+y = 922.56
+
+Class = Title
+height = 1068.72
+id = 60
+type = rect
+width = 127.2
+x = 846.24
+y = 1012.08
+
+Class = Article
+height = 542.88
+id = 61
+type = rect
+width = 129.12
+x = 840.96
+y = 1132.32
+
+Class = Article
+height = 27.36
+id = 62
+type = rect
+width = 111.36
+x = 989.76
+y = 288.96
+
+Class = Title
+height = 458.098
+id = 63
+type = rect
+width = 131.76
+x = 981.12
+y = 341.04
+
+Class = Article
+height = 741.058
+id = 64
+type = rect
+width = 132.48
+x = 981.12
+y = 497.04
+
+Class = Title
+height = 735.24
+id = 65
+type = rect
+width = 123.12
+x = 985.92
+y = 774
+
+Class = Article
+height = 965.05
+id = 66
+type = rect
+width = 131.76
+x = 980.64
+y = 783.84
+
+Class = Title
+height = 963.475
+id = 67
+type = rect
+width = 111.84
+x = 990.72
+y = 1018.08
+
+Class = Article
+height = 1310.28
+id = 68
+type = rect
+width = 131.76
+x = 978.96
+y = 1030.08
+
+Class = Title
+height = 1297.36
+id = 69
+type = rect
+width = 104.64
+x = 1004.64
+y = 1373.28
+
+Class = Article
+height = 1305.99
+id = 70
+type = rect
+width = 131.04
+x = 978
+y = 1381.44
+
+Class = Title
+height = 1319.06
+id = 71
+type = rect
+width = 124.56
+x = 981.6
+y = 1395.6
+
+Class = Article
+height = 1342.03
+id = 72
+type = rect
+width = 128.64
+x = 977.76
+y = 1420.8
+
+Class = Title
+height = 1361.69
+id = 73
+type = rect
+width = 66.48
+x = 1010.16
+y = 1437.12
+
+Class = Article
+height = 1372.85
+id = 74
+type = rect
+width = 8.88
+x = 1037.76
+y = 1455.12
+
+Class = Title
+height = 1390.47
+id = 75
+type = rect
+width = 96
+x = 993.36
+y = 1465.44
+
+Class = Article
+height = 1572.29
+id = 76
+type = rect
+width = 129.12
+x = 976.32
+y = 1495.2
+
+Class = Article
+height = 3.84
+id = 77
+type = rect
+width = 45.12
+x = 978.24
+y = 1671.36
+
