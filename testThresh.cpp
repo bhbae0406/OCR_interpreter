@@ -31,6 +31,14 @@ int distThresh = 0;
 int charArea = 0;
 int distAbove = 0;
 
+int leftThresh = 143;
+int rightThresh = 63;
+
+int nextThresh = 63;
+int prevThresh = 108;
+
+int diffThresh = 11;
+
 int pageWidth = 19268;
 int pageHeight = 28892;
 int Xdimension = 9500;
@@ -284,6 +292,58 @@ double distNextFour(rapidxml::xml_node<>* textLine)
    return dist;
 }
 
+double getOrigVPOS(rapidxml::xml_node<>* block)
+{
+   return double(atoi(block->first_attribute("VPOS")->value()));
+}
+
+double getOrigHPOS(rapidxml::xml_node<>* block)
+{
+   return double(atoi(block->first_attribute("HPOS")->value()));
+}
+
+double getOrigHeight(rapidxml::xml_node<>* block)
+{
+   return double(atoi(block->first_attribute("HEIGHT")->value()));
+}
+
+double getOrigWidth(rapidxml::xml_node<>* block)
+{
+   return double(atoi(block->first_attribute("WIDTH")->value()));
+}
+
+double convertToPixel(double val)
+{
+   //assuming val is measured in 1/1200th of an inch
+   return (72.0 * (val / 1200.0));
+}
+
+double distNextOne(rapidxml::xml_node<>* textLine)
+{
+   double prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
+
+   double curLoc = prevLoc;
+   
+   rapidxml::xml_node<>* tempLine = NULL;
+
+   //will be NULL if at bottom of textBlock
+   if ((tempLine = (textLine->next_sibling("TextLine"))) != NULL)
+   {
+      curLoc = getOrigVPOS(tempLine);
+   }
+
+   return (curLoc - prevLoc);
+}
+
+double distPrevOne(rapidxml::xml_node<>* textLine,
+      rapidxml::xml_node<>* prevLine)
+{
+   double prevLoc = getOrigVPOS(prevLine) + getOrigHeight(prevLine);
+   double curLoc = getOrigVPOS(textLine);
+
+   return (curLoc - prevLoc);
+}
+
 double charAreaRatio(rapidxml::xml_node<>* textLine)
 {
    string text;
@@ -311,6 +371,54 @@ double charAreaRatio(rapidxml::xml_node<>* textLine)
    return ratio[midIdx];
 }
 
+bool centeredLine(rapidxml::xml_node<>* textLine, int leftThresh,
+      int rightThresh)
+{
+   double curHPOS = getOrigHPOS(textLine);
+
+   double newHPOS = curHPOS; //if tempLine is NULL, the difference will be 0
+
+   double curRight = getOrigHPOS(textLine) + getOrigWidth(textLine);
+
+   double newRight = curRight;
+
+   rapidxml::xml_node<>* tempLine = NULL;
+
+   if ((tempLine = (textLine->next_sibling("TextLine"))) != NULL)
+   {
+      newHPOS = getOrigHPOS(tempLine);
+      newRight = getOrigHPOS(tempLine) + getOrigWidth(tempLine); 
+   }
+
+   double leftDiff = curHPOS - newHPOS;
+
+   double rightDiff = newRight - curRight;
+
+   if ((leftDiff > leftThresh) && (rightDiff > rightThresh))
+   {
+      return true;
+   }
+   else
+   {
+      return false;
+   }
+}
+
+bool includeHypen(rapidxml::xml_node<>* textLine)
+{
+   //does the textLine include a hypenated word?
+   //need to check for SUB_CONTENT
+
+   for (rapidxml::xml_node<>* word = textLine->first_node("String"); word != 0;
+         word = word->next_sibling("String"))
+   {
+      if ((word->first_attribute("SUBS_CONTENT")) != NULL)
+         return true;
+   }
+
+   return false;
+}
+
 //BLOCK SEGEMENTATION
 
 struct Block
@@ -322,32 +430,6 @@ struct Block
    double width;
    string block_content;
 };
-
-double getOrigVPOS(rapidxml::xml_node<>* block)
-{
-   return double(atoi(block->first_attribute("VPOS")->value()));
-}
-
-double getOrigHPOS(rapidxml::xml_node<>* block)
-{
-   return double(atoi(block->first_attribute("HPOS")->value()));
-}
-
-double getOrigHeight(rapidxml::xml_node<>* block)
-{
-   return double(atoi(block->first_attribute("HEIGHT")->value()));
-}
-
-double getOrigWidth(rapidxml::xml_node<>* block)
-{
-   return double(atoi(block->first_attribute("WIDTH")->value()));
-}
-
-double convertToPixel(double val)
-{
-   //assuming val is measured in 1/1200th of an inch
-   return (72.0 * (val / 1200.0));
-}
 
 //void displayImage(int, void*)
 //bool displayImage(int charA)
@@ -406,6 +488,21 @@ void displayImage(string filename)
    double printHeight = 0;
    double printWidth = 0;
    int countInvalidLines = 0;
+
+   double nextDistance = 0.0;
+   double prevDistance = 0.0;
+
+   bool possPancake = false;
+   int numPancake = 0;
+
+   bool allCaps = false;
+
+   bool firstIf = false;
+
+   int numCategory = 0; //number of lines in a particular category
+
+   rapidxml::xml_node<>* prevLine = NULL;
+
    for (rapidxml::xml_node<>* textBlock = first_textblock; textBlock != 0;
          textBlock = textBlock->next_sibling("TextBlock"))
    {
@@ -454,14 +551,25 @@ void displayImage(string filename)
       vpos = getOrigVPOS(textBlock);
       hpos = getOrigHPOS(textBlock);
       tempVpos = vpos;
+
+      prevLine = NULL; //resetting prevLine to NULL to mark new block
+
+      numCategory = 0;
+
       for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
+         possPancake = false;
+
+         firstIf = false;
+         allCaps = false;
+         
 	 if(numLine) {
 	     if(prevLoc >= getOrigVPOS(textLine)) 
 		countInvalidLines++;
   	 }        
 	 
+         // FILE WRITE
 	 if(countInvalidLines > invalidLinesThresh){
 	     // write to error.txt
             std:cout << "Document" << filename << " is not worth processing!" << std::endl;	
@@ -471,6 +579,7 @@ void displayImage(string filename)
             invalidFiles.close();
             //exit(1);
 	 } 
+         
          prevCat = curCat;
          numLine++;
          //tempDist1 = distAbove / (double)10;
@@ -502,24 +611,36 @@ void displayImage(string filename)
          tempCA += 315;
          //changes
          tempCA = 785;
+         
+         if (capLine(textLine, true))
+         {
+            if (isLine(textLine, "Old", 6))
+            {
+               cout << "ALL CAPS!" << '\n';
+            }
 
-         if ((((getObjectHeight(textLine) > tempHeight) &&
-                     capLine(textLine, false))||
-               (capLine(textLine, true))))
+            allCaps = true;
+         }
+
+         if (((getObjectHeight(textLine) - tempHeight) > diffThresh) ||
+                  ((getObjectHeight(textLine) > tempHeight) &&
+                     capLine(textLine, false)) || allCaps)
 
          {
-            if (isLine(textLine, "Speers", 3))
+            if (isLine(textLine, "Old", 6))
             {
                cout << "GOT -1" << '\n';
             }
 
             title = true;
             drawBlock(textLine, Scalar(0,0,255));
+
+            firstIf = true;
          }
 
          else
          {
-            if (isLine(textLine, "Speers", 3))
+            if (isLine(textLine, "Old", 6))
             {
                cout << "GOT 0" << '\n';
                //cout << capLine(textLine, false) << '\n';
@@ -527,7 +648,7 @@ void displayImage(string filename)
 
             if (capLine(textLine, false) && (cArea > tempCA))
             {
-               if (isLine(textLine, "Speers", 3))
+               if (isLine(textLine, "Old", 6))
                {
                   cout << "GOT 1" << '\n';
                   cout << "cArea = " << cArea << '\n';
@@ -536,7 +657,7 @@ void displayImage(string filename)
 
                if ((dist2 >= tempDist))// || (dist1 >= tempDist1))
                {
-                  if (isLine(textLine, "Speers", 3))
+                  if (isLine(textLine, "Old", 6))
                   {
                      cout << "GOT 2" << '\n';
                   }
@@ -568,6 +689,7 @@ void displayImage(string filename)
                      drawBlock(textLine, Scalar(0,0,255));
                   } 
                }
+               
                else
                {
                   title = false;
@@ -582,7 +704,134 @@ void displayImage(string filename)
             }
          }
 
+         /*
+         if (centeredLine(textLine, leftThresh, rightThresh) &&
+               !includeHypen(textLine))
+         {
+            drawBlock(textLine, Scalar(0,255,0));
+         }
+         */
+
+         if (isLine(textLine, "Old", 6))
+         {
+            cout << "Title = " << title << '\n';
+         }
+
+         if (title == prevCat)
+         {
+            numCategory++;
+         }
+
+         if ((title != prevCat) && (title == true) && (numCategory > 4)
+               && (distPrevOne(textLine, prevLine) < prevThresh)
+               && !(((getObjectHeight(textLine) - tempHeight) > diffThresh)
+                && capLine(textLine, false) || (allCaps)))
+         {
+            if (isLine(textLine, "Old", 6))
+            {
+               cout << "First Change" << '\n';
+            }
+
+            drawBlock(textLine, Scalar(255,0,0));
+            title = false;
+         }
+
+         //if we change from article to title
+         //and prevLine is not NULL (at least one line as been segmented)
+         if ((title != prevCat) && (prevCat == false) && (prevLine != NULL)
+               && !firstIf)
+         {
+
+            if (isLine(textLine, "Old", 6))
+            {
+               cout << "Second Change" << '\n';
+            }
+
+            prevDistance = distPrevOne(textLine, prevLine);
+            nextDistance = distNextOne(textLine);
+
+            if ((prevDistance < nextDistance)
+                  && (nextDistance > nextThresh)
+                  && (prevDistance < prevThresh))
+            {
+               if (isLine(textLine, "CACHED", 3))
+               {
+                  cout << "REACHED HERE!" << '\n';
+               }
+
+               drawBlock(textLine, Scalar(255,0,0));
+               title = false;
+            }
+         }
+
+         if ((title != prevCat) && (prevCat == true) && (prevLine != NULL))
+         {
+            prevDistance = distPrevOne(textLine, prevLine);
+            nextDistance = distNextOne(textLine);
+
+            //absolute value argument is for outliers when next line is simply
+            //to the right of the current line
+            if ((prevDistance < nextDistance)
+                  && (nextDistance > nextThresh)
+                  && (prevDistance < prevThresh)
+                  & (abs(getOrigHPOS(prevLine) - getOrigHPOS(textLine)) < 500)
+                  && (centeredLine(textLine, 20, 20) && !includeHypen(textLine)))
+            {
+               drawBlock(textLine, Scalar(0,0,255));
+               title = true;
+            }
+         }
+
+         if (title != prevCat)
+         {
+            numCategory = 0;
+         }
+
+         if (isLine(textLine, "Old", 6))
+         {
+            cout << "New Title = " << title << '\n';
+         }
+
+         /* TRYING PANCAKE METHOD -- Doesn't work though
+
+         if (title && !possPancake)
+         {
+            possPancake = true;
+         }
+
+         if (isLine(textLine, "Aid", 5))
+         {
+            cout << "Hello" << '\n';
+         }
+
+         if (possPancake && (prevLine != NULL))
+         {
+            if (((getOrigHPOS(textLine) - getOrigHPOS(prevLine)) > 10)
+                  && (((getOrigHPOS(prevLine) + getOrigWidth(prevLine))
+                     - (getOrigHPOS(textLine) + getOrigWidth(textLine))) > 10))
+            {
+               numPancake++;
+            }
+            else
+            {
+               possPancake = false;
+            }
+         }
+
+         if (possPancake && (numPancake >= 1) && (prevLine != NULL))
+         {
+            if (((getOrigHPOS(textLine) - getOrigHPOS(prevLine)) < 0)
+                  || (((getOrigHPOS(prevLine) + getOrigWidth(prevLine))
+                     - (getOrigHPOS(textLine) + getOrigWidth(textLine))) > 10))
+
+            {
+               drawBlock(textLine, Scalar(0,255,0));
+            }
+         }
+         */
+
          curCat = title;
+
          if ((process) && (curCat != prevCat))
          {
             Block temp;
@@ -659,9 +908,12 @@ void displayImage(string filename)
             	PutText(blank, word->first_attribute("CONTENT")->value(), roi, Scalar(0,0,0), FONT_HERSHEY_SIMPLEX,2,8);
          }
 
+         prevLine = textLine;
       } //for textLine
 
    } //for textblock
+
+   // FILE WRITE
 
    int countBlock = 0;
    ofstream o;
@@ -680,8 +932,10 @@ void displayImage(string filename)
 
       countBlock++;
    }
-   o.close();
 
+   o.close();
+   
+    
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(50);
@@ -689,8 +943,11 @@ void displayImage(string filename)
    std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
    imwrite("segImage.jpg", blank, compression_params);
    
+   
+   
    //imshow("Threshold Result", blank);
 }
+
 int main(int argc, char* argv[])
 {
    if (argc != 2)
@@ -734,16 +991,34 @@ int main(int argc, char* argv[])
    createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
    createTrackbar("distAbove", "Threshold Result", &distAbove, 15080,
          displayImage);
-   displayImage(0,0);
+   
+   createTrackbar("leftThresh", "Threshold Result", &leftThresh, 300,
+         displayImage);
+   createTrackbar("rightThresh", "Threshold Result", &rightThresh, 300,
+         displayImage);
 
-   To Display the trackbars, uncommment me!*/ 
+   createTrackbar("nextThresh", "Threshold Result", &nextThresh, 300, displayImage);
+   createTrackbar("prevThresh", "Threshold Result", &prevThresh, 300, displayImage);
+   
+
+   createTrackbar("diffThresh", "Threshold Result", &diffThresh, 200, displayImage);
+
+   displayImage(0,0);
+   */
+   
+
+   //To Display the trackbars, uncommment me! 
+
    displayImage(filename);
+   
+  // FILE WRITE
+   
    ofstream o;
    o.open("validFiles.txt", std::ios::app);
    o << filename << std::endl;
+  
+   
    //waitKey();
 
    return 0;
 }
-
-
