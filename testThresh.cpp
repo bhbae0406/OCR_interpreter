@@ -577,7 +577,7 @@ void displayImage(string filename)
             invalidFiles.open("invalidFiles.txt", std::ios::app);
             invalidFiles << filename << '\n';
             invalidFiles.close();
-            //exit(1);
+            exit(1);
 	 } 
          
          prevCat = curCat;
@@ -917,7 +917,7 @@ void displayImage(string filename)
 
    int countBlock = 0;
    ofstream o;
-   o.open("output_" + filename + ".txt");
+   o.open("./output/blockOut/output_" + filename + ".txt");
 
    for (size_t i = 0; i < master.size(); i++)
    {
@@ -941,9 +941,7 @@ void displayImage(string filename)
    compression_params.push_back(50);
   
    std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
-   imwrite("segImage.jpg", blank, compression_params);
-   
-   
+   imwrite("./output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
    
    //imshow("Threshold Result", blank);
 }
