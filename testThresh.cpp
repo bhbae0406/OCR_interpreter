@@ -919,6 +919,7 @@ void displayImage(string filename)
    ofstream o;
    o.open("./output/blockOut/output_" + filename + ".txt");
 
+   cout << "./output/blockOut/output_" + filename + ".txt" << endl;
    for (size_t i = 0; i < master.size(); i++)
    {
       o << "Class = " << master[i].label << '\n';
@@ -941,14 +942,14 @@ void displayImage(string filename)
    compression_params.push_back(50);
   
    std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
-   imwrite("./output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
+   imwrite("output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
    
    //imshow("Threshold Result", blank);
 }
 
 int main(int argc, char* argv[])
 {
-   if (argc != 2)
+   if (argc != 3)
    {
       cerr << "Program Usage: xml_image [xml_file.xml]" << '\n';
       exit(1);
@@ -957,7 +958,8 @@ int main(int argc, char* argv[])
 
    auto const found = inputFile.find_last_of('.');
    auto filename = inputFile.substr(0,found);
-
+   filename = argv[2];
+   cout << "processing file: " << filename << endl;
    rapidxml::file<> xmlFile(argv[1]);
    rapidxml::xml_document<> doc;
    doc.parse<0>(xmlFile.data());
