@@ -624,10 +624,10 @@ void displayImage(string filename)
          else
             temp.label = "Article";
 
-         temp.origY = vpos;
-         temp.origX = hpos;
-         temp.origHeight = prevLoc - vpos;
-         temp.origWidth = width;
+         temp.y = vpos;
+         temp.x = hpos;
+         temp.height = prevLoc - vpos;
+         temp.width = width;
 
          Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
 
@@ -635,12 +635,12 @@ void displayImage(string filename)
                ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
 
          //DRAW BLOCK
-         /*
-            if (temp.label == "Title")
+         
+         if (temp.label == "Title")
             rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
-            else
+         else
             rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
-            */
+            
 
          temp.y = convertToPixel(vpos);
          temp.x = convertToPixel(hpos);
@@ -952,10 +952,10 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
                temp.label = "Article";
             }
 
-            temp.origY = vpos;
-            temp.origX = hpos;
-            temp.origHeight = prevLoc - temp.y;
-            temp.origWidth = width;
+            temp.y = vpos;
+            temp.x = hpos;
+            temp.height = prevLoc - temp.y;
+            temp.width = width;
 
             Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
 
@@ -963,10 +963,10 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
                   ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
 
             //DRAW BLOCK
-            //if (temp.label == "Title")
-            //rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
-            //else
-            //rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
+            if (temp.label == "Title")
+               rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
+            else
+               rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
 
             temp.y = convertToPixel(vpos);
             temp.x = convertToPixel(hpos);
@@ -1033,6 +1033,7 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
    }
 
 
+   /*
    Block tempBlock = columns[0][1];
 
    Point rP1((int)(Xdimension * (tempBlock.origX/(double)pageWidth)), (int)(Ydimension * (tempBlock.origY/(double)pageHeight)));
@@ -1041,10 +1042,12 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
          ,rP1.y + (int)(Ydimension * (tempBlock.origHeight/(double)pageHeight)));
 
 
+   *
    if (tempBlock.label == "Title")
       rectangle(blank, rP1, rP2, Scalar(0,0,255), 17); 
    else 
       rectangle(blank, rP1, rP2, Scalar(255,0,0), 17); 
+   */
 
 
    int countBlock = 0;
@@ -1074,7 +1077,8 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
    compression_params.push_back(50);
 
    std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
-   imwrite("output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
+   //imwrite("output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
+   imwrite("segImage_" + filename + ".jpg", blank, compression_params);
 
    //imshow("Threshold Result", blank);
 }
