@@ -19,13 +19,13 @@ class Segment
        */
       Segment(char* filename);
 
-      void sortLines();
-
       /* DEBUGGING TOOL
        * Will print out the content of the lines in the order of
        * the vector "lines". This will help test the sortLines() function
        */
       void printLines();
+
+      void sortLines();
 
    private:
       vector<Textline> lines;
@@ -38,6 +38,7 @@ class Segment
       //UNKNOWN - must get from XML layout
       int pageWidth;
       int pageHeight;
+      int numLines;
 
       //THRESHOLD CONTANTS
 };

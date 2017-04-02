@@ -30,5 +30,33 @@ Segment::Segment(char* filename)
 
    this->pageWidth = page_node->first_attribute("WIDTH")->value();
    this->pageHeight = page_node->first_attribute("HEIGHT")->value();
+   this->numLines = 0; 
+
+   first_textBlock = page_node->first_node("PrintSpace")->first_node("TextBlock");
+
+   for (rapidxml::xml_node<>* textBlock = first_textBlock; textBlock != 0;
+         textBlock = textBlock->next_sibling("TextBlock"))
+   {
+      for (rapidxml::xml_node<> textLine = textBlock->first_node("TextLine");
+            textLine != 0; textLine = textLine->next_sibling("TextLine"))
+      {
+         Textline newLine(textLine);
+
+         this->lines.push_back(newLine);
+         this->numLines += 1
+      }
+   }
+}
+
+void Segment::printLines()
+{
+   
+}
+   
+
+void Segment::sortLines()
+{
+    
+}
 
    
