@@ -4,6 +4,7 @@
 #include "textLine.h"
 #include <vector>
 #include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
@@ -26,6 +27,14 @@ class Segment
       void printLines();
 
       void sortLines();
+
+      void PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, int lineType = 8);
+
+      void drawBlock(cv::Scalar color);
+
+      double distNextFour(int idx);
+
+
 
    private:
       vector<Textline> lines;

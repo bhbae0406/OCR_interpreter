@@ -50,13 +50,30 @@ Segment::Segment(char* filename)
 
 void Segment::printLines()
 {
-   
+   for (int i = 0; i < numLines; i++)
+   {
+      lines[i].printLine();
+   }
 }
-   
 
 void Segment::sortLines()
 {
-    
+       
 }
+
+void Segment::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
+      const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, 
+      int lineType = 8)
+{
+
+
+}
+
+void Segment::drawBlock(cv::Scalar color)
+{
+
+
+}
+
 
    

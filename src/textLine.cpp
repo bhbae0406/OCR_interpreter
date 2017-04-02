@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <iostream>
 #include "rapidxml.hpp"
 #include "rapidxml_utils.hpp"
 
@@ -203,4 +204,14 @@ bool Textline::isLine(string key, int wordCount)
       return true;
    else
       return false;
+}
+
+void Textline::printLine()
+{
+   for (int i = 0; i < (this->numWords) - 1; i++)
+   {
+      cout << this->words[i].content << " ";
+   }
+
+   cout << this->words[this->numWords - 1].content << '\n';
 }

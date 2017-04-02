@@ -45,6 +45,8 @@ class Textline
        */
       bool isLine(string word, int wordCount);
 
+      void printLine();
+
       /* Determines if the position of the left edge of the line is 
        * greater than that of the next line's and if the position of the
        * right edge of the line is less than that of the next line.
