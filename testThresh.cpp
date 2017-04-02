@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include "rapidxml.hpp"
+#include "linker.h"
 #include "rapidxml_utils.hpp"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
