@@ -16,6 +16,7 @@
 #include <functional>
 #include <boost/algorithm/string/predicate.hpp>
 #include <fstream>
+#include <unordered_map>
 //#include "parser.h"
 
 using namespace rapidxml;
@@ -430,7 +431,105 @@ struct Block
    double width;
    string block_content;
 };
+//struct range {
+//   double min;
+//   double max;
+//   double mean;
+//   range (double in_min, double in_max) : min = in_min, max = in_max {}
+//   range (double in_min, double in_max, double in_mean) : min = in_min, max = in_max, mean = in_mean {}
+//};
+struct columnLengthComparator 
+{
+   bool operator()(const Block a , const Block b )
+   {
+      return a.width >b.width;
+   }
+} columnLengthCompObject;
+struct columnSortComparator
+{
+   bool operator()(const vector<Block> a, const vector<Block> b)
+   {
+      return a[0].x < b[0].x;
+   }
+} columnSort;
 
+struct blockSortComparator 
+{
+   bool operator()(const Block a , const Block b )
+   {
+      return a.y < b.y;
+   }
+} blockSort;
+vector <vector<Block>> splitByColumn(vector<Block>& master) {
+   unordered_map <double,int> column_dict;
+   vector <vector<Block>> columns; 
+   int num_columns = 0;
+   int count_notACol = 0;
+   double slackupper = 1.1;
+   double slacklower = 0.9;
+   std::sort(master.begin(), master.end(), columnLengthCompObject);
+   double column_len = master[master.size()/2].width;
+   bool debug = false;
+   for (auto block : master) {
+      // is a valid column
+      if (block.width < column_len*slackupper && block.width > column_len*slacklower) {
+         bool newColumn = true;
+         debug = false;
+         cout << "searching for columns " << endl;
+         for (auto mid : column_dict) {
+            // searching for column in the dictionary...
+            if(block.x < mid.first && (block.x + block.width) > mid.first) {
+               if (debug == true) {
+                  cout << "error!! " << endl;
+                  cout << "current column median: " << mid.first << endl;
+                  cout << "current block x: " << block.x << endl;
+                  cout << "current block width: " << block.width << endl;
+                  cout << "columns should be of width: " << column_len << endl;
+                  exit(1);
+               }
+               columns[column_dict[mid.first]].push_back(block);
+               cout << "column found! column median: " << mid.first << endl;
+               debug = true;
+               newColumn = false;
+            }
+         }
+         if (newColumn) {
+            vector<Block> column;
+            column.push_back(block);
+            columns.push_back(column);
+            column_dict[block.x + block.width/2.0] = num_columns;
+            num_columns++;
+         }
+      } else {
+         count_notACol++;
+      }
+   }
+   std::sort(columns.begin(),columns.end(), columnSort);
+   for (int i = 0; i < columns.size(); i++){
+      std::sort(columns[i].begin(), columns[i].end(), blockSort);
+   }
+   return columns;
+}         
+     //    if (column_dict.find(block.x) != column_dict.end()) {
+     //       columns[column_dict[block.x]].push_back(block); 
+     //    } else {
+     //       vector<Block> column;
+     //       column.push_back(block);
+     //       columns.push_back(column);
+     //       column_dict[block.x] = num_columns;
+
+void print_columns(vector<vector<Block>>& columns) {
+   int num = 0;
+   cout << "number of columns: " << columns.size() << endl;
+   for (int i =0; i < columns.size(); i++ ) {
+      std::cout << "column " << num << std::endl;
+      for (int j = 0; j < columns[i].size(); j++) {
+         std::cout << columns[i][j].y << std::endl;
+      }
+      num++;
+      std::cout << "////////////////////////////////////////////////////" << std::endl;
+   }
+}
 //void displayImage(int, void*)
 //bool displayImage(int charA)
 void displayImage(string filename)
@@ -912,6 +1011,10 @@ void displayImage(string filename)
       } //for textLine
 
    } //for textblock
+   
+
+   auto columns = splitByColumn(master);
+   print_columns(columns);
 
    // FILE WRITE
 
@@ -919,6 +1022,7 @@ void displayImage(string filename)
    ofstream o;
    o.open("./output/blockOut/output_" + filename + ".txt");
 
+   cout << "./output/blockOut/output_" + filename + ".txt" << endl;
    for (size_t i = 0; i < master.size(); i++)
    {
       o << "Class = " << master[i].label << '\n';
@@ -941,14 +1045,14 @@ void displayImage(string filename)
    compression_params.push_back(50);
   
    std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
-   imwrite("./output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
+   imwrite("output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
    
    //imshow("Threshold Result", blank);
 }
 
 int main(int argc, char* argv[])
 {
-   if (argc != 2)
+   if (argc != 3)
    {
       cerr << "Program Usage: xml_image [xml_file.xml]" << '\n';
       exit(1);
@@ -957,7 +1061,8 @@ int main(int argc, char* argv[])
 
    auto const found = inputFile.find_last_of('.');
    auto filename = inputFile.substr(0,found);
-
+   filename = argv[2];
+   cout << "processing file: " << filename << endl;
    rapidxml::file<> xmlFile(argv[1]);
    rapidxml::xml_document<> doc;
    doc.parse<0>(xmlFile.data());
