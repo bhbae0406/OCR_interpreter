@@ -174,7 +174,7 @@ bool isLine(rapidxml::xml_node<>* textLine, String key, int numWords)
    String text;
    int wordCount = 0;
    bool found = false;
-   
+
    for (rapidxml::xml_node<>* word = textLine->first_node("String"); word != 0;
          word = word->next_sibling("String"))
    {
@@ -184,7 +184,7 @@ bool isLine(rapidxml::xml_node<>* textLine, String key, int numWords)
       if (!(text.compare(key)))
          found = true;
    }
-   
+
    if (found && (wordCount == numWords))
       return true;
    else
@@ -214,14 +214,14 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
       }
 
       text = word->first_attribute("CONTENT")->value();
-      
-      
+
+
       if (isalpha(text[0]) && (isupper(text[0])) && (text.length() >= 1))
       {
          numFirstCap++;
          //cap = false;
       }
-    
+
       if (allCaps)
       {
 
@@ -234,7 +234,7 @@ bool capLine(rapidxml::xml_node<>* textLine, bool allCaps)
             }
          }
       }
-      
+
    }
 
    if (allCaps)
@@ -278,13 +278,13 @@ double distNextFour(rapidxml::xml_node<>* textLine)
       if ((tempLine = (tempLine->next_sibling("TextLine"))) != NULL)
       {
          curLoc = getVPOS(tempLine);
-          
+
          if ((tempLine = (tempLine->next_sibling("TextLine"))) != NULL)
          {
             curLoc = getVPOS(tempLine);
          }
-         
-         
+
+
       }
    }
 
@@ -324,7 +324,7 @@ double distNextOne(rapidxml::xml_node<>* textLine)
    double prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
 
    double curLoc = prevLoc;
-   
+
    rapidxml::xml_node<>* tempLine = NULL;
 
    //will be NULL if at bottom of textBlock
@@ -357,7 +357,7 @@ double charAreaRatio(rapidxml::xml_node<>* textLine)
          word = word->next_sibling("String"))
    {
       text = word->first_attribute("CONTENT")->value();
-      
+
       area = getObjectWidth(word) * getObjectHeight(word);
 
       numChar = text.length();
@@ -429,6 +429,12 @@ struct Block
    double y;
    double height;
    double width;
+
+   double origX;
+   double origY;
+   double origHeight;
+   double origWidth;
+
    string block_content;
 };
 struct columnLengthComparator 
@@ -509,16 +515,16 @@ columnsAndOthers splitByColumn(vector<Block>& master) {
    for (int i = 0; i < columns.size(); i++){
       std::sort(columns[i].begin(), columns[i].end(), blockSort);
    }
-   
+
    return columnsAndOthers(columns,others);
 }         
-     //    if (column_dict.find(block.x) != column_dict.end()) {
-     //       columns[column_dict[block.x]].push_back(block); 
-     //    } else {
-     //       vector<Block> column;
-     //       column.push_back(block);
-     //       columns.push_back(column);
-     //       column_dict[block.x] = num_columns;
+//    if (column_dict.find(block.x) != column_dict.end()) {
+//       columns[column_dict[block.x]].push_back(block); 
+//    } else {
+//       vector<Block> column;
+//       column.push_back(block);
+//       columns.push_back(column);
+//       column_dict[block.x] = num_columns;
 
 void print_columns(vector<vector<Block>>& columns) {
    int num = 0;
@@ -546,7 +552,7 @@ void displayImage(string filename)
    double temp = 0.0;
 
    int numLine = 0;
-   
+
    double prevLoc = 0.0;
    double curLoc = 0.0;
    double dist1 = 0.0;
@@ -611,42 +617,42 @@ void displayImage(string filename)
 
       if (process && (numLine > 0))
       {
-            Block temp;
+         Block temp;
 
-            if (prevCat)
-               temp.label = "Title";
-            else
-               temp.label = "Article";
+         if (prevCat)
+            temp.label = "Title";
+         else
+            temp.label = "Article";
 
-            temp.y = vpos;
-            temp.x = hpos;
-            temp.height = prevLoc - vpos;
-            temp.width = width;
+         temp.origY = vpos;
+         temp.origX = hpos;
+         temp.origHeight = prevLoc - vpos;
+         temp.origWidth = width;
 
-            Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
+         Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
 
-            Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
-         ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
+         Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
+               ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
 
-            //DRAW BLOCK
-            /*
+         //DRAW BLOCK
+         /*
             if (temp.label == "Title")
-               rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
+            rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
             else
-               rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
+            rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
             */
 
-            temp.y = convertToPixel(vpos);
-            temp.x = convertToPixel(hpos);
-            temp.height = convertToPixel(prevLoc - vpos);
-            temp.width = convertToPixel(width);
-      
-            master.push_back(temp);
+         temp.y = convertToPixel(vpos);
+         temp.x = convertToPixel(hpos);
+         temp.height = convertToPixel(prevLoc - vpos);
+         temp.width = convertToPixel(width);
 
-            process = false;
-            width = 0;
+         master.push_back(temp);
+
+         process = false;
+         width = 0;
       }
-      
+
       numLine = 0;
 
       vpos = getOrigVPOS(textBlock);
@@ -664,23 +670,23 @@ void displayImage(string filename)
 
          firstIf = false;
          allCaps = false;
-         
-	 if(numLine) {
-	     if(prevLoc >= getOrigVPOS(textLine)) 
-		countInvalidLines++;
-  	 }        
-	 
+
+         if(numLine) {
+            if(prevLoc >= getOrigVPOS(textLine)) 
+               countInvalidLines++;
+         }        
+
          // FILE WRITE
-	 if(countInvalidLines > invalidLinesThresh){
-	     // write to error.txt
-            std:cout << "Document" << filename << " is not worth processing!" << std::endl;	
-	    ofstream invalidFiles;
-            invalidFiles.open("invalidFiles.txt", std::ios::app);
-            invalidFiles << filename << '\n';
-            invalidFiles.close();
-            exit(1);
-	 } 
-         
+         if(countInvalidLines > invalidLinesThresh){
+            // write to error.txt
+std:cout << "Document" << filename << " is not worth processing!" << std::endl;	
+    ofstream invalidFiles;
+    invalidFiles.open("invalidFiles.txt", std::ios::app);
+    invalidFiles << filename << '\n';
+    invalidFiles.close();
+    exit(1);
+         } 
+
          prevCat = curCat;
          numLine++;
          //tempDist1 = distAbove / (double)10;
@@ -697,7 +703,7 @@ void displayImage(string filename)
          {
             gMinDist = dist1;
          }
-         
+
          distThresh = 1611;
          tempDist = distThresh / (double)10;
          tempRatio = widthCharRatio / (double)10;
@@ -712,7 +718,7 @@ void displayImage(string filename)
          tempCA += 315;
          //changes
          tempCA = 785;
-         
+
          if (capLine(textLine, true))
          {
             if (isLine(textLine, "Old", 6))
@@ -724,8 +730,8 @@ void displayImage(string filename)
          }
 
          if (((getObjectHeight(textLine) - tempHeight) > diffThresh) ||
-                  ((getObjectHeight(textLine) > tempHeight) &&
-                     capLine(textLine, false)) || allCaps)
+               ((getObjectHeight(textLine) > tempHeight) &&
+                capLine(textLine, false)) || allCaps)
 
          {
             if (isLine(textLine, "Old", 6))
@@ -734,7 +740,7 @@ void displayImage(string filename)
             }
 
             title = true;
-            drawBlock(textLine, Scalar(0,0,255));
+            //drawBlock(textLine, Scalar(0,0,255));
 
             firstIf = true;
          }
@@ -776,42 +782,42 @@ void displayImage(string filename)
                            first_attribute("CONTENT")->value(); 
                      }
                   }
-                  
+
                   if (boost::iequals(word1, "continued") &&
                         boost::iequals(word2, "on"))
                   {
                      title = false;
-                     drawBlock(textLine, Scalar(255,0,0));
+                     //drawBlock(textLine, Scalar(255,0,0));
                   }
-                  
+
                   else
                   {
                      title = true;
-                     drawBlock(textLine, Scalar(0,0,255));
+                     //drawBlock(textLine, Scalar(0,0,255));
                   } 
                }
-               
+
                else
                {
                   title = false;
-                  drawBlock(textLine, Scalar(255,0,0));
+                  //drawBlock(textLine, Scalar(255,0,0));
                }
             }
 
             else
             {
                title = false;
-               drawBlock(textLine, Scalar(255,0,0));
+               //drawBlock(textLine, Scalar(255,0,0));
             }
          }
 
          /*
-         if (centeredLine(textLine, leftThresh, rightThresh) &&
-               !includeHypen(textLine))
-         {
+            if (centeredLine(textLine, leftThresh, rightThresh) &&
+            !includeHypen(textLine))
+            {
             drawBlock(textLine, Scalar(0,255,0));
-         }
-         */
+            }
+            */
 
          if (isLine(textLine, "Old", 6))
          {
@@ -826,14 +832,14 @@ void displayImage(string filename)
          if ((title != prevCat) && (title == true) && (numCategory > 4)
                && (distPrevOne(textLine, prevLine) < prevThresh)
                && !(((getObjectHeight(textLine) - tempHeight) > diffThresh)
-                && capLine(textLine, false) || (allCaps)))
+                  && capLine(textLine, false) || (allCaps)))
          {
             if (isLine(textLine, "Old", 6))
             {
                cout << "First Change" << '\n';
             }
 
-            drawBlock(textLine, Scalar(255,0,0));
+            //drawBlock(textLine, Scalar(255,0,0));
             title = false;
          }
 
@@ -860,7 +866,7 @@ void displayImage(string filename)
                   cout << "REACHED HERE!" << '\n';
                }
 
-               drawBlock(textLine, Scalar(255,0,0));
+               //drawBlock(textLine, Scalar(255,0,0));
                title = false;
             }
          }
@@ -878,7 +884,7 @@ void displayImage(string filename)
                   & (abs(getOrigHPOS(prevLine) - getOrigHPOS(textLine)) < 500)
                   && (centeredLine(textLine, 20, 20) && !includeHypen(textLine)))
             {
-               drawBlock(textLine, Scalar(0,0,255));
+               //drawBlock(textLine, Scalar(0,0,255));
                title = true;
             }
          }
@@ -895,41 +901,41 @@ void displayImage(string filename)
 
          /* TRYING PANCAKE METHOD -- Doesn't work though
 
-         if (title && !possPancake)
-         {
-            possPancake = true;
-         }
-
-         if (isLine(textLine, "Aid", 5))
-         {
-            cout << "Hello" << '\n';
-         }
-
-         if (possPancake && (prevLine != NULL))
-         {
-            if (((getOrigHPOS(textLine) - getOrigHPOS(prevLine)) > 10)
-                  && (((getOrigHPOS(prevLine) + getOrigWidth(prevLine))
-                     - (getOrigHPOS(textLine) + getOrigWidth(textLine))) > 10))
+            if (title && !possPancake)
             {
-               numPancake++;
+            possPancake = true;
+            }
+
+            if (isLine(textLine, "Aid", 5))
+            {
+            cout << "Hello" << '\n';
+            }
+
+            if (possPancake && (prevLine != NULL))
+            {
+            if (((getOrigHPOS(textLine) - getOrigHPOS(prevLine)) > 10)
+            && (((getOrigHPOS(prevLine) + getOrigWidth(prevLine))
+            - (getOrigHPOS(textLine) + getOrigWidth(textLine))) > 10))
+            {
+            numPancake++;
             }
             else
             {
-               possPancake = false;
+            possPancake = false;
             }
-         }
+            }
 
-         if (possPancake && (numPancake >= 1) && (prevLine != NULL))
-         {
+            if (possPancake && (numPancake >= 1) && (prevLine != NULL))
+            {
             if (((getOrigHPOS(textLine) - getOrigHPOS(prevLine)) < 0)
-                  || (((getOrigHPOS(prevLine) + getOrigWidth(prevLine))
-                     - (getOrigHPOS(textLine) + getOrigWidth(textLine))) > 10))
+            || (((getOrigHPOS(prevLine) + getOrigWidth(prevLine))
+            - (getOrigHPOS(textLine) + getOrigWidth(textLine))) > 10))
 
             {
-               drawBlock(textLine, Scalar(0,255,0));
+            drawBlock(textLine, Scalar(0,255,0));
             }
-         }
-         */
+            }
+            */
 
          curCat = title;
 
@@ -946,21 +952,21 @@ void displayImage(string filename)
                temp.label = "Article";
             }
 
-            temp.y = vpos;
-            temp.x = hpos;
-            temp.height = prevLoc - temp.y;
-            temp.width = width;
+            temp.origY = vpos;
+            temp.origX = hpos;
+            temp.origHeight = prevLoc - temp.y;
+            temp.origWidth = width;
 
             Point rP1((int)(Xdimension * (temp.x/(double)pageWidth)), (int)(Ydimension * (temp.y/(double)pageHeight)));
 
             Point rP2(rP1.x + (int)(Xdimension * (temp.width/(double)pageWidth))
-         ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
-         
+                  ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
+
             //DRAW BLOCK
             //if (temp.label == "Title")
-               //rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
+            //rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
             //else
-               //rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
+            //rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
 
             temp.y = convertToPixel(vpos);
             temp.x = convertToPixel(hpos);
@@ -990,7 +996,7 @@ void displayImage(string filename)
 
          prevLoc = getOrigVPOS(textLine) + getOrigHeight(textLine);
 
-	for (xml_node<> * word = textLine->first_node("String"); word != 0;
+         for (xml_node<> * word = textLine->first_node("String"); word != 0;
                word = word->next_sibling("String"))
          {
             printHPOS = atoi(word->first_attribute("HPOS")->value());
@@ -1006,14 +1012,14 @@ void displayImage(string filename)
 
             cv::Rect roi(p1.x, p1.y, (p2.x-p1.x), (p2.y-p1.y));
 
-            	PutText(blank, word->first_attribute("CONTENT")->value(), roi, Scalar(0,0,0), FONT_HERSHEY_SIMPLEX,2,8);
+            PutText(blank, word->first_attribute("CONTENT")->value(), roi, Scalar(0,0,0), FONT_HERSHEY_SIMPLEX,2,8);
          }
 
          prevLine = textLine;
       } //for textLine
 
    } //for textblock
-   
+
 
    auto bundle = splitByColumn(master);
    auto columns = bundle.columns;
@@ -1023,8 +1029,24 @@ void displayImage(string filename)
    for(int i = 0; i < others.size(); i++){
       cout << "x: " << others[i].x << endl;
       cout << "width: " << others[i].width << endl;
-   // FILE WRITE
+      // FILE WRITE
    }
+
+
+   Block tempBlock = columns[0][1];
+
+   Point rP1((int)(Xdimension * (tempBlock.origX/(double)pageWidth)), (int)(Ydimension * (tempBlock.origY/(double)pageHeight)));
+
+   Point rP2(rP1.x + (int)(Xdimension * (tempBlock.origWidth/(double)pageWidth))
+         ,rP1.y + (int)(Ydimension * (tempBlock.origHeight/(double)pageHeight)));
+
+
+   if (tempBlock.label == "Title")
+      rectangle(blank, rP1, rP2, Scalar(0,0,255), 17); 
+   else 
+      rectangle(blank, rP1, rP2, Scalar(255,0,0), 17); 
+
+
    int countBlock = 0;
    ofstream o;
    o.open("./output/blockOut/output_" + filename + ".txt");
@@ -1045,15 +1067,15 @@ void displayImage(string filename)
    }
 
    o.close();
-   
-    
+
+
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(50);
-  
+
    std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
    imwrite("output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
-   
+
    //imshow("Threshold Result", blank);
 }
 
@@ -1083,51 +1105,51 @@ int main(int argc, char* argv[])
    //Mat blank(Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
 
    namedWindow("Threshold Result", WINDOW_NORMAL);
-   
-   
+
+
    /* To Display the trackbars, uncommment me! 
-   createTrackbar("heightThresh", "Threshold Result", &heightThresh, 3071,
-         displayImage);
+      createTrackbar("heightThresh", "Threshold Result", &heightThresh, 3071,
+      displayImage);
 
-   
-   createTrackbar("widthChar", "Threshold Result", &widthCharRatio, 3019,
-         displayImage);
-   
-   createTrackbar("widthWord", "Threshold Result", &widthWordRatio, 19960,
-         displayImage);
-   
-   createTrackbar("distThresh", "Threshold Result", &distThresh, 9100,
-         displayImage);
-   createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
-   createTrackbar("distAbove", "Threshold Result", &distAbove, 15080,
-         displayImage);
-   
-   createTrackbar("leftThresh", "Threshold Result", &leftThresh, 300,
-         displayImage);
-   createTrackbar("rightThresh", "Threshold Result", &rightThresh, 300,
-         displayImage);
 
-   createTrackbar("nextThresh", "Threshold Result", &nextThresh, 300, displayImage);
-   createTrackbar("prevThresh", "Threshold Result", &prevThresh, 300, displayImage);
-   
+      createTrackbar("widthChar", "Threshold Result", &widthCharRatio, 3019,
+      displayImage);
 
-   createTrackbar("diffThresh", "Threshold Result", &diffThresh, 200, displayImage);
+      createTrackbar("widthWord", "Threshold Result", &widthWordRatio, 19960,
+      displayImage);
 
-   displayImage(0,0);
-   */
-   
+      createTrackbar("distThresh", "Threshold Result", &distThresh, 9100,
+      displayImage);
+      createTrackbar("charArea", "Threshold Result", &charArea, 606540, displayImage);
+      createTrackbar("distAbove", "Threshold Result", &distAbove, 15080,
+      displayImage);
+
+      createTrackbar("leftThresh", "Threshold Result", &leftThresh, 300,
+      displayImage);
+      createTrackbar("rightThresh", "Threshold Result", &rightThresh, 300,
+      displayImage);
+
+      createTrackbar("nextThresh", "Threshold Result", &nextThresh, 300, displayImage);
+      createTrackbar("prevThresh", "Threshold Result", &prevThresh, 300, displayImage);
+
+
+      createTrackbar("diffThresh", "Threshold Result", &diffThresh, 200, displayImage);
+
+      displayImage(0,0);
+      */
+
 
    //To Display the trackbars, uncommment me! 
 
    displayImage(filename);
-   
-  // FILE WRITE
-   
+
+   // FILE WRITE
+
    ofstream o;
    o.open("validFiles.txt", std::ios::app);
    o << filename << std::endl;
-  
-   
+
+
    //waitKey();
 
    return 0;
