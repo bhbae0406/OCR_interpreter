@@ -431,13 +431,6 @@ struct Block
    double width;
    string block_content;
 };
-//struct range {
-//   double min;
-//   double max;
-//   double mean;
-//   range (double in_min, double in_max) : min = in_min, max = in_max {}
-//   range (double in_min, double in_max, double in_mean) : min = in_min, max = in_max, mean = in_mean {}
-//};
 struct columnLengthComparator 
 {
    bool operator()(const Block a , const Block b )
@@ -460,9 +453,16 @@ struct blockSortComparator
       return a.y < b.y;
    }
 } blockSort;
-vector <vector<Block>> splitByColumn(vector<Block>& master) {
+struct columnsAndOthers {
+   vector<vector<Block>> columns;
+   vector<Block> others;
+   columnsAndOthers(vector<vector<Block>> in_col, vector<Block> in_others): columns(in_col), others(in_others) {};
+};
+
+columnsAndOthers splitByColumn(vector<Block>& master) {
    unordered_map <double,int> column_dict;
    vector <vector<Block>> columns; 
+   vector<Block> others;
    int num_columns = 0;
    int count_notACol = 0;
    double slackupper = 1.1;
@@ -502,13 +502,15 @@ vector <vector<Block>> splitByColumn(vector<Block>& master) {
          }
       } else {
          count_notACol++;
+         others.push_back(block);
       }
    }
    std::sort(columns.begin(),columns.end(), columnSort);
    for (int i = 0; i < columns.size(); i++){
       std::sort(columns[i].begin(), columns[i].end(), blockSort);
    }
-   return columns;
+   
+   return columnsAndOthers(columns,others);
 }         
      //    if (column_dict.find(block.x) != column_dict.end()) {
      //       columns[column_dict[block.x]].push_back(block); 
@@ -1013,11 +1015,16 @@ void displayImage(string filename)
    } //for textblock
    
 
-   auto columns = splitByColumn(master);
+   auto bundle = splitByColumn(master);
+   auto columns = bundle.columns;
+   auto others = bundle.others;
    print_columns(columns);
-
+   cout << "Non single column blocks: " << endl;
+   for(int i = 0; i < others.size(); i++){
+      cout << "x: " << others[i].x << endl;
+      cout << "width: " << others[i].width << endl;
    // FILE WRITE
-
+   }
    int countBlock = 0;
    ofstream o;
    o.open("./output/blockOut/output_" + filename + ".txt");
