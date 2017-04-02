@@ -913,6 +913,10 @@ void displayImage(string filename)
       } //for textLine
 
    } //for textblock
+   
+
+   auto columns = splitByColumn(master);
+   print_columns(columns);
 
    // FILE WRITE
 
