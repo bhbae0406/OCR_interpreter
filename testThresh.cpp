@@ -435,8 +435,11 @@ struct Block
    double origHeight;
    double origWidth;
 
+   int ID;
+
    string block_content;
 };
+
 struct columnLengthComparator 
 {
    bool operator()(const Block a , const Block b )
@@ -444,6 +447,7 @@ struct columnLengthComparator
       return a.width >b.width;
    }
 } columnLengthCompObject;
+
 struct columnSortComparator
 {
    bool operator()(const vector<Block> a, const vector<Block> b)
@@ -459,6 +463,7 @@ struct blockSortComparator
       return a.y < b.y;
    }
 } blockSort;
+
 struct columnsAndOthers {
    vector<vector<Block>> columns;
    vector<Block> others;
@@ -471,14 +476,15 @@ columnsAndOthers splitByColumn(vector<Block>& master) {
    vector<Block> others;
    int num_columns = 0;
    int count_notACol = 0;
-   double slackupper = 1.1;
-   double slacklower = 0.9;
+   double slackupper = 1.2;
+   double slacklower = 0.8;
    std::sort(master.begin(), master.end(), columnLengthCompObject);
    double column_len = master[master.size()/2].width;
    bool debug = false;
    for (auto block : master) {
       // is a valid column
       if (block.width < column_len*slackupper && block.width > column_len*slacklower) {
+      //if (block.width < column_len*slackupper) {
          bool newColumn = true;
          debug = false;
          cout << "searching for columns " << endl;
@@ -636,16 +642,20 @@ void displayImage(string filename)
 
          //DRAW BLOCK
          
+         /*
          if (temp.label == "Title")
             rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
          else
             rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
+         */
             
 
+         /*
          temp.y = convertToPixel(vpos);
          temp.x = convertToPixel(hpos);
          temp.height = convertToPixel(prevLoc - vpos);
          temp.width = convertToPixel(width);
+         */
 
          master.push_back(temp);
 
@@ -963,15 +973,19 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
                   ,rP1.y + (int)(Ydimension * (temp.height/(double)pageHeight)));
 
             //DRAW BLOCK
+            /*
             if (temp.label == "Title")
                rectangle(blank, rP1, rP2, Scalar(0,0,255), 17);
             else
                rectangle(blank, rP1, rP2, Scalar(255,0,0), 17);
+            */
 
+            /*
             temp.y = convertToPixel(vpos);
             temp.x = convertToPixel(hpos);
             temp.height = convertToPixel(prevLoc - temp.y);
             temp.width = convertToPixel(width);
+            */
 
             master.push_back(temp);
             process = false;
@@ -1029,27 +1043,114 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
    for(int i = 0; i < others.size(); i++){
       cout << "x: " << others[i].x << endl;
       cout << "width: " << others[i].width << endl;
-      // FILE WRITE
    }
 
+   int curID = 0;
+   int leftPrev = 0;
+   int rightPrev = 0;
 
+   string prevLabel = "Nothing";
+
+   Scalar color = Scalar(255,0,0);
+
+   for (int i = 0; i < static_cast<int>(columns.size()); i++)
+   {
+      for (int j = 0; j < static_cast<int>(columns[i].size()); j++)
+      {
+         Block tempBlock = columns[i][j];
+
+         leftPrev = tempBlock.x;
+         rightPrev = tempBlock.x + tempBlock.width;
+
+         for (int idx = 0; idx < static_cast<int>(others.size()); idx++)
+         {
+            if ((others[idx].x > leftPrev) &&
+                  ((others[idx].x + others[idx].width) < rightPrev) &&
+                  (others[idx].y < tempBlock.y))
+            {
+               //columns.insert(columns.begin() + i, others[idx]);
+               //others.erase(others.begin() + idx);
+
+               if (prevLabel == "Article" && others[idx].label == "Title")
+               {
+                  curID += 1;
+                  others[idx].ID = curID;
+               }
+
+               if (curID % 2 == 0)
+               {
+                  color = Scalar(255,0,0);
+               }
+
+               else
+               {
+                  color = Scalar(0,0,255);
+               }
+
+               prevLabel = others[idx].label;
+
+
+               Point rP1((int)(Xdimension * (others[idx].x/(double)pageWidth)), (int)(Ydimension * (others[idx].y/(double)pageHeight)));
+
+               Point rP2(rP1.x + (int)(Xdimension * (others[idx].width/(double)pageWidth)),rP1.y + (int)(Ydimension * (others[idx].height/(double)pageHeight)));
+
+               //if (others[idx].label == "Title")
+               rectangle(blank, rP1, rP2, color, 17); 
+
+               break;
+            }
+         }
+
+         if (prevLabel == "Article" && tempBlock.label == "Title")
+         {
+            curID += 1;
+         }
+
+         prevLabel = tempBlock.label;
+
+         if (curID % 2 == 0)
+         {
+            color = Scalar(255,0,0);
+         }
+         else
+         {
+            color = Scalar(0,0,255);
+         }
+
+         columns[i][j].ID = curID;
+
+         //DRAW BLOCK
+         Point rP1((int)(Xdimension * (tempBlock.x/(double)pageWidth)), (int)(Ydimension * (tempBlock.y/(double)pageHeight)));
+
+         Point rP2(rP1.x + (int)(Xdimension * (tempBlock.width/(double)pageWidth))
+               ,rP1.y + (int)(Ydimension * (tempBlock.height/(double)pageHeight)));
+     
+         rectangle(blank, rP1, rP2, color, 17); 
+
+      }
+   }
+
+   // DEBUGGING
+    
    /*
-   Block tempBlock = columns[0][1];
+   for (int i = 0; i < static_cast<int>(columns[7].size()); i++)
+   {
+      Block tempBlock = columns[7][i];
 
-   Point rP1((int)(Xdimension * (tempBlock.origX/(double)pageWidth)), (int)(Ydimension * (tempBlock.origY/(double)pageHeight)));
+      Point rP1((int)(Xdimension * (tempBlock.x/(double)pageWidth)), (int)(Ydimension * (tempBlock.y/(double)pageHeight)));
 
-   Point rP2(rP1.x + (int)(Xdimension * (tempBlock.origWidth/(double)pageWidth))
-         ,rP1.y + (int)(Ydimension * (tempBlock.origHeight/(double)pageHeight)));
-
-
-   *
-   if (tempBlock.label == "Title")
-      rectangle(blank, rP1, rP2, Scalar(0,0,255), 17); 
-   else 
-      rectangle(blank, rP1, rP2, Scalar(255,0,0), 17); 
+      Point rP2(rP1.x + (int)(Xdimension * (tempBlock.width/(double)pageWidth))
+            ,rP1.y + (int)(Ydimension * (tempBlock.height/(double)pageHeight)));
+  
+      if (tempBlock.label == "Title")
+         rectangle(blank, rP1, rP2, Scalar(0,0,255), 17); 
+      else 
+         rectangle(blank, rP1, rP2, Scalar(255,0,0), 17); 
+   }
    */
+   
 
-
+   //file write
    int countBlock = 0;
    ofstream o;
    o.open("./output/blockOut/output_" + filename + ".txt");
@@ -1077,8 +1178,8 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
    compression_params.push_back(50);
 
    std::cout << "Number of invalid lines detected was : " << countInvalidLines << std::endl; 
-   //imwrite("output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
-   imwrite("segImage_" + filename + ".jpg", blank, compression_params);
+   imwrite("output/segImage/segImage_" + filename + ".jpg", blank, compression_params);
+   //imwrite("segImage_" + filename + ".jpg", blank, compression_params);
 
    //imshow("Threshold Result", blank);
 }
