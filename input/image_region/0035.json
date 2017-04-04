@@ -1,0 +1,85 @@
+{
+    "annotations": [
+        {
+            "id": "0",
+            "x": 1975.0,
+            "y": 2435.0,
+            "class": "graphic",
+            "height": 4780.0,
+            "type": "rect",
+            "width": 2810.0
+        },
+        {
+            "id": "0",
+            "x": 2020.0,
+            "y": 5.0,
+            "class": "graphic",
+            "height": 2305.0,
+            "type": "rect",
+            "width": 2765.0
+        },
+        {
+            "id": "0",
+            "x": 4095.0,
+            "y": 1550.0,
+            "class": "graphic",
+            "height": 635.0,
+            "type": "rect",
+            "width": 565.0
+        },
+        {
+            "id": "0",
+            "x": 150.0,
+            "y": 5065.0,
+            "class": "graphic",
+            "height": 1315.0,
+            "type": "rect",
+            "width": 450.0
+        },
+        {
+            "id": "0",
+            "x": 125.0,
+            "y": 3035.0,
+            "class": "graphic",
+            "height": 385.0,
+            "type": "rect",
+            "width": 550.0
+        },
+        {
+            "id": "0",
+            "x": 4055.0,
+            "y": 6185.0,
+            "class": "graphic",
+            "height": 335.0,
+            "type": "rect",
+            "width": 275.0
+        },
+        {
+            "id": "0",
+            "x": 3950.0,
+            "y": 3565.0,
+            "class": "graphic",
+            "height": 485.0,
+            "type": "rect",
+            "width": 420.0
+        },
+        {
+            "id": "0",
+            "x": 1830.0,
+            "y": 2050.0,
+            "class": "graphic",
+            "height": 425.0,
+            "type": "rect",
+            "width": 1105.0
+        },
+        {
+            "id": "0",
+            "x": 130.0,
+            "y": 3430.0,
+            "class": "graphic",
+            "height": 1360.0,
+            "type": "rect",
+            "width": 1110.0
+        }
+    ]
+}

@@ -1,0 +1,94 @@
+{
+    "annotations": [
+        {
+            "class": "graphic",
+            "width": 705.0,
+            "y": 685.0,
+            "id": "0",
+            "x": 2475.0,
+            "type": "rect",
+            "height": 1005.0
+        },
+        {
+            "class": "graphic",
+            "width": 2135.0,
+            "y": 410.0,
+            "id": "0",
+            "x": 2535.0,
+            "type": "rect",
+            "height": 3305.0
+        },
+        {
+            "class": "graphic",
+            "width": 1605.0,
+            "y": 5060.0,
+            "id": "0",
+            "x": 3015.0,
+            "type": "rect",
+            "height": 1950.0
+        },
+        {
+            "class": "graphic",
+            "width": 540.0,
+            "y": 5945.0,
+            "id": "0",
+            "x": 1850.0,
+            "type": "rect",
+            "height": 420.0
+        },
+        {
+            "class": "graphic",
+            "width": 1685.0,
+            "y": 3645.0,
+            "id": "0",
+            "x": 2975.0,
+            "type": "rect",
+            "height": 585.0
+        },
+        {
+            "class": "graphic",
+            "width": 210.0,
+            "y": 745.0,
+            "id": "0",
+            "x": 4385.0,
+            "type": "rect",
+            "height": 630.0
+        },
+        {
+            "class": "graphic",
+            "width": 275.0,
+            "y": 4885.0,
+            "id": "0",
+            "x": 355.0,
+            "type": "rect",
+            "height": 465.0
+        },
+        {
+            "class": "graphic",
+            "width": 895.0,
+            "y": 2060.0,
+            "id": "0",
+            "x": 200.0,
+            "type": "rect",
+            "height": 1790.0
+        },
+        {
+            "class": "graphic",
+            "width": 545.0,
+            "y": 1415.0,
+            "id": "0",
+            "x": 195.0,
+            "type": "rect",
+            "height": 600.0
+        },
+        {
+            "class": "graphic",
+            "width": 225.0,
+            "y": 2075.0,
+            "id": "0",
+            "x": 1065.0,
+            "type": "rect",
+            "height": 420.0
+        }
+    ]
+}
