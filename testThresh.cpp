@@ -17,7 +17,9 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <fstream>
 #include <unordered_map>
-//#include "parser.h"
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
 using namespace rapidxml;
 using namespace std;
@@ -436,8 +438,11 @@ struct Block
    double origWidth;
 
    int ID;
-
    string block_content;
+
+   Block() : x(0.0), y(0.0), height(0.0), width(0.0), label("") {};
+   Block(double in_x, double in_y, double in_height, double in_width, string in_label)
+    : x(in_x), y(in_y), height(in_height), width(in_width), label(in_label) {};
 };
 
 struct columnLengthComparator 
@@ -487,7 +492,6 @@ columnsAndOthers splitByColumn(vector<Block>& master) {
       //if (block.width < column_len*slackupper) {
          bool newColumn = true;
          debug = false;
-         cout << "searching for columns " << endl;
          for (auto mid : column_dict) {
             // searching for column in the dictionary...
             if(block.x < mid.first && (block.x + block.width) > mid.first) {
@@ -500,7 +504,6 @@ columnsAndOthers splitByColumn(vector<Block>& master) {
                   exit(1);
                }
                columns[column_dict[mid.first]].push_back(block);
-               cout << "column found! column median: " << mid.first << endl;
                debug = true;
                newColumn = false;
             }
@@ -841,8 +844,8 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
 
          if ((title != prevCat) && (title == true) && (numCategory > 4)
                && (distPrevOne(textLine, prevLine) < prevThresh)
-               && !(((getObjectHeight(textLine) - tempHeight) > diffThresh)
-                  && capLine(textLine, false) || (allCaps)))
+               && (!((((getObjectHeight(textLine) - tempHeight) > diffThresh)
+                  && capLine(textLine, false)) || (allCaps))))
          {
             if (isLine(textLine, "Old", 6))
             {
@@ -1038,12 +1041,6 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
    auto bundle = splitByColumn(master);
    auto columns = bundle.columns;
    auto others = bundle.others;
-   print_columns(columns);
-   cout << "Non single column blocks: " << endl;
-   for(int i = 0; i < others.size(); i++){
-      cout << "x: " << others[i].x << endl;
-      cout << "width: " << others[i].width << endl;
-   }
 
    int curID = 0;
    int leftPrev = 0;
@@ -1155,7 +1152,7 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
    ofstream o;
    o.open("./output/blockOut/output_" + filename + ".txt");
 
-   cout << "./output/blockOut/output_" + filename + ".txt" << endl;
+   cout << "output recorded at ./output/blockOut/output_" + filename + ".txt" << endl;
    for (size_t i = 0; i < master.size(); i++)
    {
       o << "Class = " << master[i].label << '\n';
@@ -1184,6 +1181,43 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
    //imshow("Threshold Result", blank);
 }
 
+// void print(boost::property_tree::ptree const& pt)
+// {
+//     using boost::property_tree::ptree;
+//     ptree::const_iterator end = pt.end();
+//     for (ptree::const_iterator it = pt.begin(); it != end; ++it) {
+//         std::cout << it->first << ": " << it->second.get_value<std::string>() << std::endl;
+//         print(it->second);
+//     }
+// }
+
+vector<Block> generate_invalid_zones(const string& json_file) {
+   std::stringstream ss;
+   std::ifstream file(json_file);
+   if (file) {
+      ss << file.rdbuf(); 
+      file.close();
+   }
+   const std::string tmp = ss.str();
+   const char* json = tmp.c_str();
+   rapidjson::Document d;
+   d.Parse(json);
+   vector<Block> invalid_zones;
+
+
+   const rapidjson::Value& annotations = d["annotations"];
+   for (rapidjson::SizeType i = 0; i < annotations.Size(); i++){
+      Block curBlock(static_cast<double> (annotations[i]["x"].GetDouble()), 
+         static_cast<double> (annotations[i]["y"].GetDouble()), 
+         static_cast<double> (annotations[i]["height"].GetDouble()), 
+         static_cast<double> (annotations[i]["width"].GetDouble()),
+         "graphic");
+      invalid_zones.push_back(curBlock);
+   }
+   cout << json_file << " had " << invalid_zones.size() << " invalid zones!" << endl;
+   return invalid_zones;
+}
+
 int main(int argc, char* argv[])
 {
    if (argc != 3)
@@ -1208,6 +1242,9 @@ int main(int argc, char* argv[])
       first_node("PrintSpace")->first_node("TextBlock");
 
    //Mat blank(Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
+
+   auto invalid_zones = generate_invalid_zones("./input/image_region/" + filename + ".json");
+
 
    namedWindow("Threshold Result", WINDOW_NORMAL);
 
