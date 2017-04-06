@@ -25,6 +25,9 @@ using namespace rapidxml;
 using namespace std;
 using namespace cv;
 
+int dimX = 0;
+int dimY = 0;
+
 int heightThresh = 0;
 int numThresh = 0;
 int blockThresh = 0;
@@ -1181,6 +1184,39 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
    //imshow("Threshold Result", blank);
 }
 
+double convertToXML_h(double in)
+{
+   return (in * (Xdimension / (double)dimX));
+}
+
+double convertToXML_v(double in)
+{
+   return (in * (Ydimension / (double)dimY));
+}
+
+
+void drawZones(vector<Block>& zones, const string& name)
+{
+   for (int i = 0; i < static_cast<int>(zones.size()); i++)
+   {
+      Block tempBlock = zones[i];
+
+      Point rP1((int)(Xdimension * (tempBlock.x/(double)pageWidth)), (int)(Ydimension * (tempBlock.y/(double)pageHeight)));
+
+      Point rP2(rP1.x + (int)(Xdimension * (tempBlock.width/(double)pageWidth))
+            ,rP1.y + (int)(Ydimension * (tempBlock.height/(double)pageHeight)));
+  
+      rectangle(blank, rP1, rP2, Scalar(0,0,255), 17); 
+   }
+
+   vector<int> compression_params;
+   compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+   compression_params.push_back(50);
+
+   imwrite("output/segImage/invalidZone_" + name + ".jpg", blank, compression_params);
+}
+   
+
 // void print(boost::property_tree::ptree const& pt)
 // {
 //     using boost::property_tree::ptree;
@@ -1194,23 +1230,32 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
 vector<Block> generate_invalid_zones(const string& json_file) {
    std::stringstream ss;
    std::ifstream file(json_file);
+   bool notfound = false;
    if (file) {
       ss << file.rdbuf(); 
       file.close();
+   } else {
+      notfound = true;
+   }
+
+   vector<Block> invalid_zones;
+   if (notfound) {
+      std::cout << "JSON result from image processing not found!!!" << std::endl;
+      return invalid_zones;
    }
    const std::string tmp = ss.str();
    const char* json = tmp.c_str();
    rapidjson::Document d;
    d.Parse(json);
-   vector<Block> invalid_zones;
 
 
    const rapidjson::Value& annotations = d["annotations"];
    for (rapidjson::SizeType i = 0; i < annotations.Size(); i++){
-      Block curBlock(static_cast<double> (annotations[i]["x"].GetDouble()), 
-         static_cast<double> (annotations[i]["y"].GetDouble()), 
-         static_cast<double> (annotations[i]["height"].GetDouble()), 
-         static_cast<double> (annotations[i]["width"].GetDouble()),
+
+      Block curBlock(convertToXML_h(static_cast<double> (annotations[i]["x"].GetDouble())), 
+         convertToXML_v(static_cast<double> (annotations[i]["y"].GetDouble())), 
+         convertToXML_v(static_cast<double> (annotations[i]["height"].GetDouble())), 
+         convertToXML_h(static_cast<double> (annotations[i]["width"].GetDouble())),
          "graphic");
       invalid_zones.push_back(curBlock);
    }
@@ -1220,11 +1265,17 @@ vector<Block> generate_invalid_zones(const string& json_file) {
 
 int main(int argc, char* argv[])
 {
-   if (argc != 3)
+   if (argc != 5)
    {
-      cerr << "Program Usage: xml_image [xml_file.xml]" << '\n';
+      cerr << "Program Usage: xml_image [xml_file.xml] [dimX] [dimY]" << '\n';
       exit(1);
    }
+
+   dimX = stoi(argv[3]);
+   dimY = stoi(argv[4]);
+
+   cout << "DimX = " << dimX << std::endl;
+
    string inputFile(argv[1]);
 
    auto const found = inputFile.find_last_of('.');
@@ -1241,10 +1292,12 @@ int main(int argc, char* argv[])
    first_textblock = layout_node->first_node("Page")->
       first_node("PrintSpace")->first_node("TextBlock");
 
+
    //Mat blank(Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
 
    auto invalid_zones = generate_invalid_zones("./input/image_region/" + filename + ".json");
-
+   
+   drawZones(invalid_zones, filename);
 
    namedWindow("Threshold Result", WINDOW_NORMAL);
 

@@ -1,4 +1,5 @@
 import os
+from PIL import Image
 
 input_dir = os.getcwd() + "/input"
 input_files = os.listdir(input_dir)
@@ -20,4 +21,10 @@ for image in jpg_files:
    os.system("python ./image_processing/mser_filter.py ./input/ ./input/image_region/ " + image_name)
 for input_file in xml_files:
    file_name = input_file.rsplit('.', 1)[0]
-   os.system("./threshTest " + "./input/" + input_file + " " + file_name)
+   image_path = "./input/" + file_name + ".jpg"
+   if os.path.exists(image_path):
+       im = Image.open(image_path)
+       dim = im.size
+       print("Dimensions for " + file_name + ": ")
+       print(dim)
+       os.system("./threshTest " + "./input/" + input_file + " " + file_name + " " + str(dim[0]) + " " + str(dim[1]))
