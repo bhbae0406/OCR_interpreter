@@ -1306,7 +1306,6 @@ int main(int argc, char* argv[])
       createTrackbar("heightThresh", "Threshold Result", &heightThresh, 3071,
       displayImage);
 
-
       createTrackbar("widthChar", "Threshold Result", &widthCharRatio, 3019,
       displayImage);
 
