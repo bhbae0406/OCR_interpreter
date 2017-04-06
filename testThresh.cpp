@@ -1186,12 +1186,12 @@ std:cout << "Document" << filename << " is not worth processing!" << std::endl;
 
 double convertToXML_h(double in)
 {
-   return (in * (Xdimension / (double)dimX));
+   return in * (double) pageWidth / (double)dimX;
 }
 
 double convertToXML_v(double in)
 {
-   return (in * (Ydimension / (double)dimY));
+   return in * (double) pageHeight / (double)dimY;
 }
 
 
