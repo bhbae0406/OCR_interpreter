@@ -36,6 +36,9 @@ Segment::Segment(char* filename)
    this->pageHeight = atoi(page_node->first_attribute("HEIGHT")->value());
    this->numLines = 0; 
 
+   this->Xdimension = 9500;
+   this->Ydimension = 9600;
+
    xml_node<>* first_textBlock = page_node->first_node("PrintSpace")
       ->first_node("TextBlock");
 
@@ -51,6 +54,9 @@ Segment::Segment(char* filename)
          this->numLines += 1;
       }
    }
+
+   Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
+   img = blank;
 }
 
 void Segment::printLines()
@@ -145,7 +151,7 @@ void Segment::drawWords()
 
    for (int i = 0; i < numLines; i++)
    {
-      vector<Word> curWords = lines[i].getWords();
+      vector<Textline::Word> curWords = lines[i].getWords();
 
       for (int i = 0; i < static_cast<int>(curWords.size()); i++)
       {   

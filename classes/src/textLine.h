@@ -116,7 +116,7 @@ class Textline
          */
       };
 
-      vector<Word> getWords();
+      vector<Word>& getWords();
 
    private:
       vector<Word> words;

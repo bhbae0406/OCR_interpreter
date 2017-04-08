@@ -43,10 +43,10 @@ Textline::Textline(rapidxml::xml_node<>* textLine)
          word != 0; word = word->next_sibling("String"))
    {
       Word newWord;
-      newWord.hPos = word->first_attribute("HPOS")->value();
-      newWord.vPos = word->first_attribute("VPOS")->value();
-      newWord.height = word->first_attribute("HEIGHT")->value();
-      newWord.width = word->first_attribute("WIDTH")->value();
+      newWord.hPos = atoi(word->first_attribute("HPOS")->value());
+      newWord.vPos = atoi(word->first_attribute("VPOS")->value());
+      newWord.height = atoi(word->first_attribute("HEIGHT")->value());
+      newWord.width = atoi(word->first_attribute("WIDTH")->value());
       newWord.content = word->first_attribute("CONTENT")->value();
       if ((word->first_attribute("SUBS_CONTENT")) != NULL)
       {
@@ -159,7 +159,7 @@ bool Textline::capLine(bool allCaps)
 
    for (int i = 0; i < this->numWords; i++)
    {
-      text = this-words[i].content;
+      text = this->words[i].content;
 
       if (isalpha(text[0]))
       {
@@ -282,7 +282,7 @@ void Textline::PutText(cv::Mat& img, const std::string& text, const cv::Rect& ro
 }
 */
 
-vector<Word> getWords()
+vector<Textline::Word>& Textline::getWords()
 {
    return this->words;
 }

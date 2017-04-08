@@ -1,4 +1,4 @@
-#include "segment.cpp"
+#include "segment.h"
 #include <iostream>
 
 using namespace std;
@@ -14,7 +14,6 @@ int main(int argc, char* argv[])
 
    newSegment->drawWords();
    newSegment->writeImage();
-
    return 0;
 }
 
