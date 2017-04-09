@@ -43,7 +43,7 @@ class Segment
 
       void drawWords();
 
-      void writeImage();
+      void writeImage(char* filename);
 
       //double distNextFour(int idx);
 

@@ -250,11 +250,13 @@ void Segment::drawWords()
    }
 }
 
-void Segment::writeImage()
+void Segment::writeImage(char* filename)
 {
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(50);
 
-   imwrite("segImage.jpg", img, compression_params);
+   string fileName(filename);
+
+   imwrite("segImage_" + fileName + ".jpg", img, compression_params);
 }

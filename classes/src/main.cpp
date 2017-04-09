@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
    newSegment->drawWords();
    newSegment->drawLines();
-   newSegment->writeImage();
+   newSegment->writeImage(argv[1]);
    return 0;
 }
 
