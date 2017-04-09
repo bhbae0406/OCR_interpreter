@@ -17,13 +17,70 @@
 #include <functional>
 #include <boost/algorithm/string/predicate.hpp>
 #include <fstream>
+#include <unordered_map>
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
 using namespace std;
 using namespace cv;
 using namespace rapidxml;
 
-Segment::Segment(char* filename)
+double Segment::convertToXML_h(double in)
 {
+   return in * (double) pageWidth / (double)dimX;
+}
+
+double Segment::convertToXML_v(double in)
+{
+   return in * (double) pageHeight / (double)dimY;
+}
+
+vector<Block> Segment::generate_invalid_zones(const string& json_file)
+{
+   std::stringstream ss;
+   std::ifstream file(json_file);
+   bool notfound = false;
+   if (file) {
+      ss << file.rdbuf(); 
+      file.close();
+   } else {
+      notfound = true;
+   }
+
+   vector<Block> invalid_zones;
+   if (notfound) {
+      std::cout << "JSON result from image processing not found!!!" << std::endl;
+      return invalid_zones;
+   }
+   const std::string tmp = ss.str();
+   const char* json = tmp.c_str();
+   rapidjson::Document d;
+   d.Parse(json);
+
+   const rapidjson::Value& annotations = d["annotations"];
+   for (rapidjson::SizeType i = 0; i < annotations.Size(); i++){
+
+      Block curBlock(convertToXML_h(static_cast<double> (annotations[i]["x"].GetDouble())), 
+            convertToXML_v(static_cast<double> (annotations[i]["y"].GetDouble())), 
+            convertToXML_v(static_cast<double> (annotations[i]["height"].GetDouble())), 
+            convertToXML_h(static_cast<double> (annotations[i]["width"].GetDouble())), 0);
+      invalid_zones.push_back(curBlock);
+   }
+   cout << json_file << " had " << invalid_zones.size() << " invalid zones!" << endl;
+   return invalid_zones;
+}
+
+void Segment::setDim(char* dimXcoord, char* dimYcoord)
+{
+   this->dimX = stoi(dimXcoord);
+   this->dimY = stoi(dimYcoord);
+}
+
+Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
+{
+   bool skipLine = false;
+
    rapidxml::file<> xmlFile(filename);
    rapidxml::xml_document<> doc;
    doc.parse<0>(xmlFile.data());
@@ -39,6 +96,11 @@ Segment::Segment(char* filename)
    this->Xdimension = 9500;
    this->Ydimension = 9600;
 
+   std::string json_file(jsonFile);
+   setDim(dimX, dimY);
+
+   vector<Block> invalidZones = this->generate_invalid_zones(json_file);
+
    xml_node<>* first_textBlock = page_node->first_node("PrintSpace")
       ->first_node("TextBlock");
 
@@ -49,9 +111,22 @@ Segment::Segment(char* filename)
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
          Textline newLine(textLine);
+         
+         skipLine = false;
 
-         this->lines.push_back(newLine);
-         this->numLines += 1;
+         for (int i = 0; i < static_cast<int>(invalidZones.size()); i++)
+         {
+            if (newLine.lineInBlock(invalidZones[i]))
+            {
+               skipLine = true;
+            }
+         }
+
+         if (!skipLine)
+         {
+            this->lines.push_back(newLine);
+            this->numLines += 1;
+         }
       }
    }
 
@@ -135,10 +210,13 @@ void Segment::drawLines()
             , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
 
       //if title, color red -- (255,0,0)
+      /*
       if (lines[i].getLabel())
          rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
       else
          rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
+      */
+      rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
    }
 }
 

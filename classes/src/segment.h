@@ -2,6 +2,7 @@
 #define SEGMENT_H
 
 #include "textLine.h"
+#include "block.h"
 #include <vector>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -14,12 +15,19 @@ class Segment
 {
    public:
 
+      double convertToXML_h(double in);
+
+      double convertToXML_v(double in);
+
+      vector<Block> generate_invalid_zones(const string& json_file);
+
+      void setDim(char* dimXcoord, char* dimYcoord);
       //CONSTRUCTOR
        /* This will use rapidxml to read through the document and:
        * 1) Construct all Textline objects and place in vector "lines"
        * 2) Initialize the page attributes, pageWidth and pageHeight
        */
-      Segment(char* filename);
+      Segment(char* filename, char* jsonFile, char* dimX, char* dimY);
 
       /* DEBUGGING TOOL
        * Will print out the content of the lines in the order of
@@ -54,6 +62,8 @@ class Segment
       int pageWidth;
       int pageHeight;
       int numLines;
+      int dimX;
+      int dimY;
 
       //THRESHOLD CONTANTS
 };

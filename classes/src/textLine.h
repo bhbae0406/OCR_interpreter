@@ -1,6 +1,7 @@
 #ifndef TEXTLINE_H
 #define TEXTLINE_H
 
+#include "block.h"
 #include <string.h>
 #include <string>
 #include <cstring>
@@ -33,6 +34,12 @@ class Textline
        * and stores them in private variables
        */
       Textline(rapidxml::xml_node<>* textLine);
+
+      //found in stack overflow
+      //http://stackoverflow.com/questions/306316/determine-if-two-rectangles-overlap-each-other
+      bool valueInRange(double value, double min, double max);
+
+      bool lineInBlock(Block invalid);
 
       //retrieve private variables
       int getHPOS();

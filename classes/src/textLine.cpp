@@ -1,5 +1,4 @@
 #include "textLine.h"
-
 #include <string.h>
 #include <string>
 #include <cstring>
@@ -100,6 +99,24 @@ Textline::Textline(rapidxml::xml_node<>* textLine)
 
    //initialize title to false
    this->title = false;
+}
+
+bool Textline::valueInRange(double value, double min, double max)
+{
+   return (value >= min) && (value <= max);
+}
+
+bool Textline::lineInBlock(Block invalid)
+{
+   bool xOverlap = valueInRange(double(this->hPos), invalid.getX(), 
+         invalid.getX() + invalid.getWidth()) ||
+         valueInRange(invalid.getX(), double(this->hPos), double(this->hPos + this->width));
+
+   bool yOverlap = valueInRange(double(this->vPos), invalid.getY(), invalid.getY() 
+         + invalid.getHeight()) ||
+      valueInRange(invalid.getY(), double(this->vPos), double(this->vPos + this->height));
+
+   return xOverlap && yOverlap;
 }
 
 int Textline::getHPOS()
@@ -235,50 +252,50 @@ void Textline::printLine()
 }
 
 /*
-void Textline::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, int lineType = 8)
-{
+   void Textline::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, int lineType = 8)
+   {
    CV_Assert(!img.empty() && (img.type() == CV_8UC3 || img.type() == CV_8UC1));
    CV_Assert(roi.area() > 0);
    CV_Assert(!text.empty());
 
    int baseline = 0;
 
-   // Calculates the width and height of a text string
-   cv::Size textSize = cv::getTextSize(text, fontFace, fontScale, thickness, &baseline);
-   // Y-coordinate of the baseline relative to the bottom-most text point
-   baseline += thickness;
+// Calculates the width and height of a text string
+cv::Size textSize = cv::getTextSize(text, fontFace, fontScale, thickness, &baseline);
+// Y-coordinate of the baseline relative to the bottom-most text point
+baseline += thickness;
 
-   // Render the text over here (fits to the text size)
-   cv::Mat textImg(textSize.height + baseline, textSize.width, img.type());
+// Render the text over here (fits to the text size)
+cv::Mat textImg(textSize.height + baseline, textSize.width, img.type());
 
-   if (color == cv::Scalar::all(0)) textImg = cv::Scalar::all(255);
-   else textImg = cv::Scalar::all(0);
+if (color == cv::Scalar::all(0)) textImg = cv::Scalar::all(255);
+else textImg = cv::Scalar::all(0);
 
-   // Estimating the resolution of bounding image
-   cv::Point textOrg((textImg.cols - textSize.width) / 2, (textImg.rows + textSize.height - baseline) / 2);
+// Estimating the resolution of bounding image
+cv::Point textOrg((textImg.cols - textSize.width) / 2, (textImg.rows + textSize.height - baseline) / 2);
 
-   // TR and BL points of the bounding box
-   cv::Point tr(textOrg.x, textOrg.y + baseline);
-   cv::Point bl(textOrg.x + textSize.width, textOrg.y - textSize.height);
+// TR and BL points of the bounding box
+cv::Point tr(textOrg.x, textOrg.y + baseline);
+cv::Point bl(textOrg.x + textSize.width, textOrg.y - textSize.height);
 
-   cv::putText(textImg, text, textOrg, fontFace, fontScale, color, thickness);
+cv::putText(textImg, text, textOrg, fontFace, fontScale, color, thickness);
 
-   // Resizing according to the ROI
-   cv::resize(textImg, textImg, roi.size());
+// Resizing according to the ROI
+cv::resize(textImg, textImg, roi.size());
 
-   cv::Mat textImgMask = textImg;
-   if (textImgMask.type() == CV_8UC3)
-      cv::cvtColor(textImgMask, textImgMask, cv::COLOR_BGR2GRAY);
+cv::Mat textImgMask = textImg;
+if (textImgMask.type() == CV_8UC3)
+cv::cvtColor(textImgMask, textImgMask, cv::COLOR_BGR2GRAY);
 
-   // Creating the mask
-   cv::equalizeHist(textImgMask, textImgMask);
+// Creating the mask
+cv::equalizeHist(textImgMask, textImgMask);
 
-   if (color == cv::Scalar::all(0)) cv::threshold(textImgMask, textImgMask, 1, 255, cv::THRESH_BINARY_INV);
-   else cv::threshold(textImgMask, textImgMask, 254, 255, cv::THRESH_BINARY);
+if (color == cv::Scalar::all(0)) cv::threshold(textImgMask, textImgMask, 1, 255, cv::THRESH_BINARY_INV);
+else cv::threshold(textImgMask, textImgMask, 254, 255, cv::THRESH_BINARY);
 
-   // Put into the original image
-   cv::Mat destRoi = img(roi);
-   textImg.copyTo(destRoi, textImgMask);
+// Put into the original image
+cv::Mat destRoi = img(roi);
+textImg.copyTo(destRoi, textImgMask);
 }
 */
 
