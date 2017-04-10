@@ -39,9 +39,11 @@ class Segment
             const cv::Scalar& color, int fontFace, double fontScale, 
             int thickness, int lineType);
 
-      void drawLines();
+      void drawOriginal(char* filename, std::vector<Block>& zones);
 
-      void drawWords();
+      void drawLines(bool orig);
+
+      void drawWords(bool orig);
 
       void writeImage(char* filename);
 
@@ -49,6 +51,8 @@ class Segment
 
    private:
       vector<Textline> lines;
+
+      vector<Textline> origLines;
 
       //IMAGE
       cv::Mat img;

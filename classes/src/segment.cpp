@@ -111,7 +111,9 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
             textLine != 0; textLine = textLine->next_sibling("TextLine"))
       {
          Textline newLine(textLine);
-         
+
+         origLines.push_back(textLine);
+
          skipLine = false;
 
          for (int i = 0; i < static_cast<int>(invalidZones.size()); i++)
@@ -130,8 +132,11 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
       }
    }
 
+
    Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
    img = blank;
+
+   drawOriginal(filename, invalidZones);
 }
 
 void Segment::printLines()
@@ -190,19 +195,71 @@ void Segment::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi
    textImg.copyTo(destRoi, textImgMask);
 }
 
-void Segment::drawLines()
+void Segment::drawOriginal(char* filename, std::vector<Block>& zones)
+{
+   drawWords(true);
+   drawLines(true);
+
+   for (int i = 0; i < static_cast<int>(zones.size()); i++)
+   {
+      Block tempBlock = zones[i];
+
+      Point rP1((int)(Xdimension * (tempBlock.getX()/(double)pageWidth)), (int)(Ydimension * (tempBlock.getY()/(double)pageHeight)));
+
+      Point rP2(rP1.x + (int)(Xdimension * (tempBlock.getWidth()/(double)pageWidth))
+            ,rP1.y + (int)(Ydimension * (tempBlock.getHeight()/(double)pageHeight)));
+
+      rectangle(img, rP1, rP2, Scalar(0,255,0), 17);
+   }
+
+   vector<int> compression_params;
+   compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+   compression_params.push_back(50);
+
+   string fileName(filename);
+
+   fileName = fileName.substr(fileName.length() - 8, 4);
+
+   imwrite("imageOrig_" + fileName + ".jpg", img, compression_params);
+
+   Mat origImage(Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
+
+   img = origImage;
+}
+
+void Segment::drawLines(bool orig)
 {
    int rHpos;
    int rVpos;
    int rHeight;
    int rWidth;
+   int numOfLines = 0;
 
-   for (int i = 0; i < numLines; i++)
+   if (orig)
    {
-      rHpos = lines[i].getHPOS();
-      rVpos = lines[i].getVPOS();
-      rHeight = lines[i].getHeight();
-      rWidth = lines[i].getWidth();
+      numOfLines = static_cast<int>(origLines.size());
+   }
+   else
+   {
+      numOfLines = static_cast<int>(lines.size());
+   }
+
+   for (int i = 0; i < numOfLines; i++)
+   {
+      if (orig)
+      {
+         rHpos = origLines[i].getHPOS();
+         rVpos = origLines[i].getVPOS();
+         rHeight = origLines[i].getHeight();
+         rWidth = origLines[i].getWidth();
+      }
+      else
+      {
+         rHpos = lines[i].getHPOS();
+         rVpos = lines[i].getVPOS();
+         rHeight = lines[i].getHeight();
+         rWidth = lines[i].getWidth();
+      }
 
       Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
 
@@ -211,25 +268,43 @@ void Segment::drawLines()
 
       //if title, color red -- (255,0,0)
       /*
-      if (lines[i].getLabel())
+         if (lines[i].getLabel())
          rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
-      else
+         else
          rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
-      */
+         */
       rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
    }
 }
 
-void Segment::drawWords()
+void Segment::drawWords(bool orig)
 {
    int printHPOS = 0;
    int printVPOS = 0;
    int printHeight = 0;
    int printWidth = 0;
+   int numOfLines = 0;
 
-   for (int i = 0; i < numLines; i++)
+   if (orig)
    {
-      vector<Textline::Word> curWords = lines[i].getWords();
+      numOfLines = static_cast<int>(origLines.size());
+   }
+   else
+   {
+      numOfLines = static_cast<int>(lines.size());
+   }
+
+   for (int i = 0; i < numOfLines; i++)
+   {
+      vector<Textline::Word> curWords;
+      if (orig)
+      {
+         curWords = origLines[i].getWords();
+      }
+      else
+      {
+         curWords = lines[i].getWords();
+      }
 
       for (int i = 0; i < static_cast<int>(curWords.size()); i++)
       {   
@@ -252,11 +327,16 @@ void Segment::drawWords()
 
 void Segment::writeImage(char* filename)
 {
+   cout << "GOT HERE!" << '\n';
    vector<int> compression_params;
    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
    compression_params.push_back(50);
 
    string fileName(filename);
+
+   fileName = fileName.substr(fileName.length() - 8, 4);
+
+   cout << "segImage_" + fileName + ".jpg" << '\n';
 
    imwrite("segImage_" + fileName + ".jpg", img, compression_params);
 }

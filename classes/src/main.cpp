@@ -12,8 +12,8 @@ int main(int argc, char* argv[])
 
    Segment* newSegment = new Segment(argv[1], argv[2], argv[3], argv[4]);
 
-   newSegment->drawWords();
-   newSegment->drawLines();
+   newSegment->drawWords(false);
+   newSegment->drawLines(false);
    newSegment->writeImage(argv[1]);
    return 0;
 }
