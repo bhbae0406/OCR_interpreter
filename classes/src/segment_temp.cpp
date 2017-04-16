@@ -36,20 +36,66 @@ double Segment::convertToXML_v(double in)
    return in * (double) pageHeight / (double)dimY;
 }
 
+void Segment::splitByColumn() {
+   unordered_map <double,int> column_dict;
+   int num_columns = 0;
+   int count_notACol = 0;
+   double slackupper = 1.2;
+   double slacklower = 0.8;
+
+   std::sort(this->lines.begin(), this->lines.end(), columnLengthCompObject);
+   double column_len = lines[lines.size()/2].getWidth();
+   bool debug = false;
+   for (auto curLine : master) {
+      // is a valid column
+      if (curLine.getWidth() < column_len*slackupper && curLine.getWidth() > column_len*slacklower) {
+      //if (block.width < column_len*slackupper) {
+         bool newColumn = true;
+         debug = false;
+         for (auto mid : column_dict) {
+            // searching for column in the dictionary...
+            if(curLine.getX() < mid.first && (curLine.getX() + curLine.getWidth()) > mid.first) {
+               if (debug == true) {
+                  cout << "error!! " << endl;
+                  cout << "current column median: " << mid.first << endl;
+                  cout << "current block x: " << curLine.getX() << endl;
+                  cout << "current block width: " << curLine.getWidth() << endl;
+                  cout << "columns should be of width: " << column_len << endl;
+                  exit(1);
+               }
+               this->columns[column_dict[mid.first]].push_back(curLine);
+               debug = true;
+               newColumn = false;
+            }
+         }
+         if (newColumn) {
+            vector<Textline> column;
+            column.push_back(curLine);
+            this->columns.push_back(column);
+            column_dict[curLine.getX() + curLine.getWidth()/2.0] = num_columns;
+            num_columns++;
+         }
+      } else {
+         count_notACol++;
+         this->nonSingleLines.push_back(curLine);
+      }
+   }
+   std::sort(this->columns.begin(),this->columns.end(), columnSort);
+   for (int i = 0; i < this->columns.size(); i++){
+      std::sort(this->columns[i].begin(), this->columns[i].end(), lineSort);
+   }
+}
+
 vector<Block> Segment::generate_invalid_zones(const string& json_file)
 {
    std::stringstream ss;
    std::ifstream file(json_file);
    bool notfound = false;
+   vector<Block> invalid_zones;
    if (file) {
       ss << file.rdbuf(); 
       file.close();
    } else {
-      notfound = true;
-   }
-
-   vector<Block> invalid_zones;
-   if (notfound) {
       std::cout << "JSON result from image processing not found!!!" << std::endl;
       return invalid_zones;
    }
@@ -143,7 +189,7 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
       }
    }
 
-
+   this->splitByColumn();
    Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
    img = blank;
 

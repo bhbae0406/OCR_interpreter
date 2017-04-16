@@ -16,11 +16,10 @@ class Segment
    public:
 
       double convertToXML_h(double in);
-
       double convertToXML_v(double in);
 
       vector<Block> generate_invalid_zones(const string& json_file);
-
+      void splitByColumn();
       void setDim(char* dimXcoord, char* dimYcoord);
       //CONSTRUCTOR
        /* This will use rapidxml to read through the document and:
@@ -36,22 +35,15 @@ class Segment
        */
 
       void segment();
-
       double xmlHeight(Textline& line);
-
       double xmlWidth(Textline& line);
-
       double xmlVPOS(Textline& line);
-
       double xmlHPOS(Textline& line);
 
       //distance from current line to the third line below it. May need to fix later.
       double distNextFour(int idx);
-
       bool centeredLine(int idx, int leftThresh, int rightThresh);
-
       double distPrevOne(int idx);
-
       double distNextOne(int idx);
 
       /* DEBUGGING TOOL
@@ -66,17 +58,15 @@ class Segment
             int thickness, int lineType);
 
       void drawOriginal(char* filename, std::vector<Block>& zones);
-
       void drawLines(bool orig);
-
       void drawWords(bool orig);
-
       void writeImage(char* filename);
 
    private:
       vector<Textline> lines;
-
       vector<Textline> origLines;
+      vector<vector<Textline>> columns;
+      vector<Textline> nonSingleLines;
 
       //IMAGE
       cv::Mat img;
@@ -94,13 +84,35 @@ class Segment
       int dimY;
 
       //THRESHOLD CONTANTS
-      
       double heightThresh;
       int diffThresh;
       double CAThresh;
       double distThresh;
       int prevThresh;
       int nextThresh;
-
 };
+
+// Comparators
+struct columnLengthComparator 
+{
+   bool operator()(const Textline& a , const Textline& b)
+   {
+      return a.getWidth() > b.getWidth();
+   }
+} columnLengthCompObject;
+struct columnSortComparator
+{
+   bool operator()(const vector<Textline>& a, const vector<Textline>& b)
+   {
+      return a[0].getX() < b[0].getX();
+   }
+} columnSort;
+
+struct lineSortComparator 
+{
+   bool operator()(const Textline& a , const Textline& b)
+   {
+      return a.getY() < b.getY();
+   }
+} lineSort;
 #endif
