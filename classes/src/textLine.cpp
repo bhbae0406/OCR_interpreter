@@ -106,6 +106,7 @@ bool Textline::valueInRange(double value, double min, double max)
    return (value >= min) && (value <= max);
 }
 
+//taken from stack overflow
 bool Textline::lineInBlock(Block invalid)
 {
    bool xOverlap = valueInRange(double(this->hPos), invalid.getX(), 
@@ -142,6 +143,41 @@ int Textline::getHeight()
 bool Textline::getLabel()
 {
    return this->title;
+}
+
+bool Textline::hyphen()
+{
+   return this->hasHyphen;
+}
+
+bool Textline::isMulti()
+{
+   return this->multiColumn;
+}
+
+bool Textline::visited()
+{
+   return this->visited;
+}
+
+void Textline::setLabel(bool value)
+{
+   this->title = value;
+}
+
+void Textline::setVisited()
+{
+   this->visited = true;
+}
+
+void Textline::setID(int value)
+{
+   this->ID = value;
+}
+
+void Textline::setSubID(int value)
+{
+   this->subID = value;
 }
 
 double Textline::charAreaRatio()
@@ -251,53 +287,31 @@ void Textline::printLine()
    cout << this->words[this->numWords - 1].content << '\n';
 }
 
-/*
-   void Textline::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, int lineType = 8)
+bool Textline::continuedTag()
+{
+   if ((numWords >= 2) && (boost::iequals((this->words[0]).content, "continued")) &&
+         (boost::iequals((this->words[1]).content, "on")))
    {
-   CV_Assert(!img.empty() && (img.type() == CV_8UC3 || img.type() == CV_8UC1));
-   CV_Assert(roi.area() > 0);
-   CV_Assert(!text.empty());
-
-   int baseline = 0;
-
-// Calculates the width and height of a text string
-cv::Size textSize = cv::getTextSize(text, fontFace, fontScale, thickness, &baseline);
-// Y-coordinate of the baseline relative to the bottom-most text point
-baseline += thickness;
-
-// Render the text over here (fits to the text size)
-cv::Mat textImg(textSize.height + baseline, textSize.width, img.type());
-
-if (color == cv::Scalar::all(0)) textImg = cv::Scalar::all(255);
-else textImg = cv::Scalar::all(0);
-
-// Estimating the resolution of bounding image
-cv::Point textOrg((textImg.cols - textSize.width) / 2, (textImg.rows + textSize.height - baseline) / 2);
-
-// TR and BL points of the bounding box
-cv::Point tr(textOrg.x, textOrg.y + baseline);
-cv::Point bl(textOrg.x + textSize.width, textOrg.y - textSize.height);
-
-cv::putText(textImg, text, textOrg, fontFace, fontScale, color, thickness);
-
-// Resizing according to the ROI
-cv::resize(textImg, textImg, roi.size());
-
-cv::Mat textImgMask = textImg;
-if (textImgMask.type() == CV_8UC3)
-cv::cvtColor(textImgMask, textImgMask, cv::COLOR_BGR2GRAY);
-
-// Creating the mask
-cv::equalizeHist(textImgMask, textImgMask);
-
-if (color == cv::Scalar::all(0)) cv::threshold(textImgMask, textImgMask, 1, 255, cv::THRESH_BINARY_INV);
-else cv::threshold(textImgMask, textImgMask, 254, 255, cv::THRESH_BINARY);
-
-// Put into the original image
-cv::Mat destRoi = img(roi);
-textImg.copyTo(destRoi, textImgMask);
+      return true;
+   }
+   else
+      return false;
 }
-*/
+
+bool Textline::operator==(const Textline& rhs)
+{
+   if ((this->hPos == rhs.hPos)
+         && (this->vPos = rhs.vPos)
+         && (this->width = rhs.width)
+         && (this->height = rhs.height))
+   {
+      return true;
+   }
+   else
+   {
+      return false;
+   }
+}
 
 vector<Textline::Word>& Textline::getWords()
 {

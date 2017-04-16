@@ -47,6 +47,17 @@ class Textline
       int getWidth();
       int getHeight();
       bool getLabel();
+      bool hyphen();
+
+      bool isMulti();
+      bool visited();
+
+      //sets label to true or false based on classification
+      void setLabel(bool value);
+      void setVisited();
+
+      void setID(int value);
+      void setSubID(int value);
 
       /* For each word in line, calculates (Area of Word) / (Num Characers in Word).
        * Sorts these ratios and returns the median ratio
@@ -71,21 +82,12 @@ class Textline
 
       void printLine();
 
-      //void PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, int lineType = 8);
+      bool continuedTag();
 
-      /* Determines if the position of the left edge of the line is 
-       * greater than that of the next line's and if the position of the
-       * right edge of the line is less than that of the next line.
-       *
-       * If so, return true. Else, return false.
-       *
-       * Need to include this function somewhere else, because it requires knowledge
-       * of lines below it.
-       */
-
-      //bool centeredLine(int leftGap, int rightGap);
+      bool operator==(const Textline& rhs);
 
       //struct for each word in line
+
       struct Word
       {
          int hPos;
@@ -94,37 +96,10 @@ class Textline
          int height;
          string content; //actual word
          bool subContent;
-
-         /*
-         int getHPOS()
-         {
-            return hpos;
-         }
-
-         int getVPOS()
-         {
-            return vpos;
-         }
-
-         int getWidth()
-         {
-            return width;
-         }
-
-         int getHeight()
-         {
-            return height;
-         }
-
-         string getContent
-         {
-            return content;
-         }
-         */
       };
 
       vector<Word>& getWords();
-
+   
    private:
       vector<Word> words;
 
@@ -135,6 +110,8 @@ class Textline
       int height;
       int numWords;
       bool hasHyphen;
+
+      bool multiColumn;
 
 
       //THRESHOLD CONSTANTS
@@ -147,6 +124,12 @@ class Textline
        * If article, title = false
        */
       bool title;
+
+      bool visited; //will be used in linking stage
+
+      //used for linking and evaluation
+      int subID;
+      int ID;
 };
 
 #endif

@@ -29,10 +29,36 @@ class Segment
        */
       Segment(char* filename, char* jsonFile, char* dimX, char* dimY);
 
+      /* The following four functions are used to normalize the height, width,
+       * VPOS, and HPOS. This is necessary because different newspapers have
+       * different pageWidths and pageHeights. Therefore, for the thresholds
+       * to work correctly, these attributes need to be normalized.
+       */
+
+      void segment();
+
+      double xmlHeight(Textline& line);
+
+      double xmlWidth(Textline& line);
+
+      double xmlVPOS(Textline& line);
+
+      double xmlHPOS(Textline& line);
+
+      //distance from current line to the third line below it. May need to fix later.
+      double distNextFour(int idx);
+
+      bool centeredLine(int idx, int leftThresh, int rightThresh);
+
+      double distPrevOne(int idx);
+
+      double distNextOne(int idx);
+
       /* DEBUGGING TOOL
        * Will print out the content of the lines in the order of
        * the vector "lines". 
        */
+
       void printLines();
 
       void PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
@@ -46,8 +72,6 @@ class Segment
       void drawWords(bool orig);
 
       void writeImage(char* filename);
-
-      //double distNextFour(int idx);
 
    private:
       vector<Textline> lines;
@@ -70,8 +94,13 @@ class Segment
       int dimY;
 
       //THRESHOLD CONTANTS
+      
+      double heightThresh;
+      int diffThresh;
+      double CAThresh;
+      double distThresh;
+      int prevThresh;
+      int nextThresh;
+
 };
-
 #endif
-
-
