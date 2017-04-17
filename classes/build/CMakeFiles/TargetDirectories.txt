@@ -1,0 +1,3 @@
+/home/jdominic/ProQuest/OCR_interpreter/classes/build/CMakeFiles/edit_cache.dir
+/home/jdominic/ProQuest/OCR_interpreter/classes/build/CMakeFiles/rebuild_cache.dir
+/home/jdominic/ProQuest/OCR_interpreter/classes/build/CMakeFiles/SegmentPage.dir

@@ -155,7 +155,7 @@ bool Textline::isMulti()
    return this->multiColumn;
 }
 
-bool Textline::visited()
+bool Textline::isVisited()
 {
    return this->visited;
 }

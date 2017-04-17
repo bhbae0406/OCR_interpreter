@@ -46,7 +46,7 @@ void Segment::splitByColumn() {
    std::sort(this->lines.begin(), this->lines.end(), columnLengthCompObject);
    double column_len = lines[lines.size()/2].getWidth();
    bool debug = false;
-   for (auto curLine : master) {
+   for (auto curLine : lines) {
       // is a valid column
       if (curLine.getWidth() < column_len*slackupper && curLine.getWidth() > column_len*slacklower) {
       //if (block.width < column_len*slackupper) {
@@ -54,11 +54,11 @@ void Segment::splitByColumn() {
          debug = false;
          for (auto mid : column_dict) {
             // searching for column in the dictionary...
-            if(curLine.getX() < mid.first && (curLine.getX() + curLine.getWidth()) > mid.first) {
+            if(curLine.getHPOS() < mid.first && (curLine.getHPOS() + curLine.getWidth()) > mid.first) {
                if (debug == true) {
                   cout << "error!! " << endl;
                   cout << "current column median: " << mid.first << endl;
-                  cout << "current block x: " << curLine.getX() << endl;
+                  cout << "current block x: " << curLine.getHPOS() << endl;
                   cout << "current block width: " << curLine.getWidth() << endl;
                   cout << "columns should be of width: " << column_len << endl;
                   exit(1);
@@ -72,7 +72,7 @@ void Segment::splitByColumn() {
             vector<Textline> column;
             column.push_back(curLine);
             this->columns.push_back(column);
-            column_dict[curLine.getX() + curLine.getWidth()/2.0] = num_columns;
+            column_dict[curLine.getHPOS() + curLine.getWidth()/2.0] = num_columns;
             num_columns++;
          }
       } else {

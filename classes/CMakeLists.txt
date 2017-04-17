@@ -9,5 +9,5 @@ include_directories(SYSTEM
 
 include_directories(src)
 
-add_executable( SegmentPage src/main.cpp src/segment.cpp src/segment.h src/textLine.h src/textLine.cpp src/block.h src/block.cpp)
+add_executable( SegmentPage src/main.cpp src/segment_temp.cpp src/segment.h src/textLine.h src/textLine.cpp src/block.h src/block.cpp)
 target_link_libraries( SegmentPage ${OpenCV_LIBS} )

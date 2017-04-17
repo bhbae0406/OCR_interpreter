@@ -50,7 +50,7 @@ class Textline
       bool hyphen();
 
       bool isMulti();
-      bool visited();
+      bool isVisited();
 
       //sets label to true or false based on classification
       void setLabel(bool value);

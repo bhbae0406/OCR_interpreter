@@ -116,6 +116,7 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
 
          skipLine = false;
 
+         
          for (int i = 0; i < static_cast<int>(invalidZones.size()); i++)
          {
             if (newLine.lineInBlock(invalidZones[i]))
@@ -123,7 +124,7 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
                skipLine = true;
             }
          }
-
+         
          if (!skipLine)
          {
             this->lines.push_back(newLine);

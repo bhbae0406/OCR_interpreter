@@ -95,24 +95,26 @@ class Segment
 // Comparators
 struct columnLengthComparator 
 {
-   bool operator()(const Textline& a , const Textline& b)
+   bool operator()(Textline& a , Textline& b)
    {
       return a.getWidth() > b.getWidth();
    }
 } columnLengthCompObject;
+
 struct columnSortComparator
 {
-   bool operator()(const vector<Textline>& a, const vector<Textline>& b)
+   bool operator()(vector<Textline>& a, vector<Textline>& b)
    {
-      return a[0].getX() < b[0].getX();
+      return a[0].getHPOS() < b[0].getHPOS();
    }
 } columnSort;
 
 struct lineSortComparator 
 {
-   bool operator()(const Textline& a , const Textline& b)
+   bool operator()(Textline& a , Textline& b)
    {
-      return a.getY() < b.getY();
+      return a.getVPOS() < b.getVPOS();
    }
 } lineSort;
+
 #endif
