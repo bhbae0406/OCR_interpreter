@@ -46,7 +46,7 @@ void Segment::splitByColumn() {
    std::sort(this->lines.begin(), this->lines.end(), columnLengthCompObject);
    double column_len = lines[lines.size()/2].getWidth();
    bool debug = false;
-   for (auto curLine : lines) {
+   for (auto curLine : this->lines) {
       // is a valid column
       if (curLine.getWidth() < column_len*slackupper && curLine.getWidth() > column_len*slacklower) {
       //if (block.width < column_len*slackupper) {
