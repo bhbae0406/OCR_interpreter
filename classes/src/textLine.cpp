@@ -120,34 +120,34 @@ bool Textline::lineInBlock(Block invalid)
    return xOverlap && yOverlap;
 }
 
-int Textline::getHPOS()
+int Textline::getHPOS() const
 {
-   return this->hPos;
+   return hPos;
 }
 
-int Textline::getVPOS()
+int Textline::getVPOS() const
 {
-   return this->vPos;
+   return vPos;
 }
 
-int Textline::getWidth()
+int Textline::getWidth() const
 {
-   return this->width;
+   return width;
 }
 
-int Textline::getHeight()
+int Textline::getHeight() const
 {
-   return this->height;
+   return height;
 }
 
-bool Textline::getLabel()
+bool Textline::getLabel() const
 {
-   return this->title;
+   return title;
 }
 
-bool Textline::hyphen()
+bool Textline::hyphen() const
 {
-   return this->hasHyphen;
+   return hasHyphen;
 }
 
 bool Textline::isMulti()
@@ -298,12 +298,28 @@ bool Textline::continuedTag()
       return false;
 }
 
+Textline& operator=(const Textline& rhs){
+   this->words = rhs.words;
+   this->hPos = rhs.hPos;
+   this->vPos = rhs.vPos;
+   this->width = rhs.width;
+   this->height = rhs.height;
+   this->numWords = rhs.numWords;
+   this->hasHyphen = rhs.hasHypen;
+   this->multiColumn = rhs.multiColumn;
+   this->title = rhs.title;
+   this->visited = rhs.visited;
+   this->subID = rhs.subID;
+   this->ID = rhs.ID;
+   return *this;
+}
+
 bool Textline::operator==(const Textline& rhs)
 {
    if ((this->hPos == rhs.hPos)
-         && (this->vPos = rhs.vPos)
-         && (this->width = rhs.width)
-         && (this->height = rhs.height))
+         && (this->vPos == rhs.vPos)
+         && (this->width == rhs.width)
+         && (this->height == rhs.height))
    {
       return true;
    }

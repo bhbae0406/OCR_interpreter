@@ -42,12 +42,12 @@ class Textline
       bool lineInBlock(Block invalid);
 
       //retrieve private variables
-      int getHPOS();
-      int getVPOS();
-      int getWidth();
-      int getHeight();
-      bool getLabel();
-      bool hyphen();
+      int getHPOS() const;
+      int getVPOS() const;
+      int getWidth() const;
+      int getHeight() const;
+      bool getLabel() const;
+      bool hyphen() const;
 
       bool isMulti();
       bool isVisited();
@@ -84,6 +84,8 @@ class Textline
 
       bool continuedTag();
 
+
+      Textline& operator=(Textline const &rhs){
       bool operator==(const Textline& rhs);
 
       //struct for each word in line
