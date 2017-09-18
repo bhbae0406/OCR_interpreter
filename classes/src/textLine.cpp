@@ -298,14 +298,14 @@ bool Textline::continuedTag()
       return false;
 }
 
-Textline& operator=(const Textline& rhs){
+Textline& Textline::operator=(const Textline& rhs){
    this->words = rhs.words;
    this->hPos = rhs.hPos;
    this->vPos = rhs.vPos;
    this->width = rhs.width;
    this->height = rhs.height;
    this->numWords = rhs.numWords;
-   this->hasHyphen = rhs.hasHypen;
+   this->hasHyphen = rhs.hasHyphen;
    this->multiColumn = rhs.multiColumn;
    this->title = rhs.title;
    this->visited = rhs.visited;

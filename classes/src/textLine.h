@@ -85,7 +85,7 @@ class Textline
       bool continuedTag();
 
 
-      Textline& operator=(Textline const &rhs){
+      Textline& operator=(Textline const &rhs);
       bool operator==(const Textline& rhs);
 
       //struct for each word in line
