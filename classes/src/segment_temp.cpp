@@ -36,8 +36,8 @@ double Segment::convertToXML_v(double in)
   return in * (double) pageHeight / (double)dimY;
 }
 
-/*
-   void Segment::splitByColumn() {
+void Segment::splitByColumn() 
+{
    unordered_map <double,int> column_dict;
    int num_columns = 0;
    int count_notACol = 0;
@@ -46,49 +46,60 @@ double Segment::convertToXML_v(double in)
 
    columnLengthComparator comp;
    std::sort(this->lines.begin(), this->lines.end(), comp);
+   
+   //store the average width of all the lines
    double column_len = lines[lines.size()/2].getWidth();
    bool debug = false;
-   for (auto curLine : this->lines) {
-// is a valid column
-if (curLine.getWidth() < column_len*slackupper && curLine.getWidth() > column_len*slacklower) {
-//if (block.width < column_len*slackupper) {
-bool newColumn = true;
-debug = false;
-for (auto mid : column_dict) {
-// searching for column in the dictionary...
-if(curLine.getHPOS() < mid.first && (curLine.getHPOS() + curLine.getWidth()) > mid.first) {
-if (debug == true) {
-cout << "error!! " << endl;
-cout << "current column median: " << mid.first << endl;
-cout << "current block x: " << curLine.getHPOS() << endl;
-cout << "current block width: " << curLine.getWidth() << endl;
-cout << "columns should be of width: " << column_len << endl;
-exit(1);
-}
-this->columns[column_dict[mid.first]].push_back(curLine);
-debug = true;
-newColumn = false;
-}
-}
-if (newColumn) {
-vector<Textline> column;
-column.push_back(curLine);
-this->columns.push_back(column);
-column_dict[curLine.getHPOS() + curLine.getWidth()/2.0] = num_columns;
-num_columns++;
-}
-} else {
-count_notACol++;
-this->nonSingleLines.push_back(curLine);
+   for (auto curLine : this->lines) 
+   {
+      // is a valid column - determined by width of line (with slack)
+      if ((curLine.getWidth() < column_len*slackupper)
+          && (curLine.getWidth() > column_len*slacklower)) 
+      {
+        bool newColumn = true;
+        debug = false;
+        for (auto mid : column_dict) 
+        {
+          // searching for column in the dictionary...
+          if((curLine.getHPOS() < mid.first) 
+              && ((curLine.getHPOS() + curLine.getWidth()) > mid.first)) 
+          {
+            if (debug == true) 
+            {
+              cout << "error!! " << endl;
+              cout << "current column median: " << mid.first << endl;
+              cout << "current block x: " << curLine.getHPOS() << endl;
+              cout << "current block width: " << curLine.getWidth() << endl;
+              cout << "columns should be of width: " << column_len << endl;
+              exit(1);
+            }
+
+            this->columns[column_dict[mid.first]].push_back(curLine);
+            debug = true;
+            newColumn = false;
+          }
+        }
+
+        if (newColumn) 
+        {
+          vector<Textline> column;
+          column.push_back(curLine);
+          this->columns.push_back(column);
+          column_dict[curLine.getHPOS() + curLine.getWidth()/2.0] = num_columns;
+          num_columns++;
+        }
+      } 
+        
+      else 
+      {
+        count_notACol++;
+        this->nonSingleLines.push_back(curLine);
+      }
+    }
 }
 
-//std::sort(this->columns.begin(),this->columns.end(), columnSort);
-for (int i = 0; i < this->columns.size(); i++){
-//std::sort(this->columns[i].begin(), this->columns[i].end(), lineSort);
-}
-}
-*/
-
+      
+      
 vector<Block> Segment::generate_invalid_zones(const string& json_file)
 {
   std::stringstream ss;
@@ -197,7 +208,7 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
     }
   }
 
-  //this->splitByColumn();
+  this->splitByColumn();
   Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
   img = blank;
 
@@ -532,6 +543,7 @@ void Segment::drawLines(bool orig)
     numOfLines = static_cast<int>(lines.size());
   }
 
+  /*
   for (int i = 0; i < numOfLines; i++)
   {
     if (orig)
@@ -556,6 +568,7 @@ void Segment::drawLines(bool orig)
 
     //if title, color red -- (255,0,0)
 
+    
     if (lines[i].getLabel())
       rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
     else
@@ -563,6 +576,30 @@ void Segment::drawLines(bool orig)
 
     //rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
   }
+  */
+
+  //DEBUGGING
+  //print out lines per column
+  for (int i = 0; i < columns[0].size(); i++)
+  {
+    rHpos = columns[0][i].getHPOS();
+    rVpos = columns[0][i].getVPOS();
+    rHeight = columns[0][i].getHeight();
+    rWidth = columns[0][i].getWidth();
+
+    Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
+
+    Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
+        , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
+
+    //if title, color red -- (255,0,0)
+
+    
+    rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+
+    //rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+  }
+
 }
 
 void Segment::drawWords(bool orig)
