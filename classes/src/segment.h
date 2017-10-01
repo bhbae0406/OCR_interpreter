@@ -66,7 +66,9 @@ class Segment
       vector<Textline> lines;
       vector<Textline> origLines;
       vector<vector<Textline>> columns;
+      vector<vector<Textline>> sortedColumns;
       vector<Textline> nonSingleLines;
+      vector<Textline> smallWidthLines;
 
       //IMAGE
       cv::Mat img;
@@ -97,7 +99,7 @@ struct columnLengthComparator
 {
    bool operator()(const Textline& a , const Textline& b)
    {
-      return a.getWidth() > b.getWidth();
+      return a.getWidth() < b.getWidth();
    }
 };
 

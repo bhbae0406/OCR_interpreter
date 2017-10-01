@@ -38,68 +38,181 @@ double Segment::convertToXML_v(double in)
 
 void Segment::splitByColumn() 
 {
-   unordered_map <double,int> column_dict;
-   int num_columns = 0;
-   int count_notACol = 0;
-   double slackupper = 1.2;
-   double slacklower = 0.8;
+  //double - x coord of middle of each column
+  //int - column id
+  unordered_map <double,int> column_dict;
 
-   columnLengthComparator comp;
-   std::sort(this->lines.begin(), this->lines.end(), comp);
-   
-   //store the average width of all the lines
-   double column_len = lines[lines.size()/2].getWidth();
-   bool debug = false;
-   for (auto curLine : this->lines) 
-   {
-      // is a valid column - determined by width of line (with slack)
-      if ((curLine.getWidth() < column_len*slackupper)
-          && (curLine.getWidth() > column_len*slacklower)) 
+  //stores the minimum xCoord for each column
+  vector<int> rangeMin;
+
+  //stores the maximum xCoord for each column
+  vector<int> rangeMax;
+
+  int num_columns = 0;
+  int count_notACol = 0;
+  double slackupper = 1.2;
+  double slacklower = 0.8;
+
+  columnLengthComparator comp;
+  std::sort(this->lines.begin(), this->lines.end(), comp);
+
+  //store the average width of all the lines
+  double column_len = lines[lines.size()/2].getWidth();
+  bool debug = false;
+  for (auto curLine : this->lines) 
+  {
+    // is a valid column - determined by width of line (with slack)
+    //  This mitigates the effect of OCR errors
+    if ((curLine.getWidth() < column_len*slackupper)
+        && (curLine.getWidth() > column_len*slacklower)) 
+    {
+      bool newColumn = true;
+      debug = false;
+      for (auto mid : column_dict) 
       {
-        bool newColumn = true;
-        debug = false;
-        for (auto mid : column_dict) 
+        // searching for column in the dictionary...
+        if((curLine.getHPOS() < mid.first) 
+            && ((curLine.getHPOS() + curLine.getWidth()) > mid.first)) 
         {
-          // searching for column in the dictionary...
-          if((curLine.getHPOS() < mid.first) 
-              && ((curLine.getHPOS() + curLine.getWidth()) > mid.first)) 
+          //when the line is classified as being part of more than one column 
+          if (debug == true) 
           {
-            if (debug == true) 
-            {
-              cout << "error!! " << endl;
-              cout << "current column median: " << mid.first << endl;
-              cout << "current block x: " << curLine.getHPOS() << endl;
-              cout << "current block width: " << curLine.getWidth() << endl;
-              cout << "columns should be of width: " << column_len << endl;
-              exit(1);
-            }
+            cout << "error!! " << endl;
+            cout << "current column median: " << mid.first << endl;
+            cout << "current block x: " << curLine.getHPOS() << endl;
+            cout << "current block width: " << curLine.getWidth() << endl;
+            cout << "columns should be of width: " << column_len << endl;
+            exit(1);
+          }
 
-            this->columns[column_dict[mid.first]].push_back(curLine);
-            debug = true;
-            newColumn = false;
+          this->columns[column_dict[mid.first]].push_back(curLine);
+          debug = true;
+          newColumn = false;
+
+          if (curLine.getHPOS() < rangeMin[column_dict[mid.first]])
+          {
+            rangeMin[column_dict[mid.first]] = curLine.getHPOS();
+          }
+
+          if ((curLine.getHPOS() + curLine.getWidth())
+              > rangeMin[column_dict[mid.first]])
+          {
+            rangeMax[column_dict[mid.first]] = curLine.getHPOS() + curLine.getWidth();
           }
         }
+      }
 
-        if (newColumn) 
-        {
-          vector<Textline> column;
-          column.push_back(curLine);
-          this->columns.push_back(column);
-          column_dict[curLine.getHPOS() + curLine.getWidth()/2.0] = num_columns;
-          num_columns++;
-        }
-      } 
-        
-      else 
+      if (newColumn) 
       {
-        count_notACol++;
+        vector<Textline> column;
+        column.push_back(curLine);
+        this->columns.push_back(column);
+        column_dict[curLine.getHPOS() + curLine.getWidth()/2.0] = num_columns;
+        num_columns++;
+
+        rangeMin.push_back(curLine.getHPOS());
+        rangeMax.push_back(curLine.getHPOS() + curLine.getWidth());
+      }
+    } 
+
+    else 
+    {
+      count_notACol++;
+
+      if ((curLine.getWidth() > column_len*slackupper)
+        && (curLine.getWidth() > column_len*slacklower)) 
+      {
         this->nonSingleLines.push_back(curLine);
       }
+      else
+      {
+        this->smallWidthLines.push_back(curLine);
+      }
     }
+  }
+
+  debug = false;
+
+  /* Second Pass:
+   *    Accounts for lines that failed the mid check, but are
+   *    still in the column.
+   */
+
+  double rangeSlackLower = 0.99;
+  double rangeSlackHigher = 0.99;
+
+  for (auto curLine : this->smallWidthLines) 
+  {
+    debug = false;
+    for (auto mid : column_dict) 
+    {
+      // searching for column in the dictionary...
+      if((curLine.getHPOS() >= ((rangeMin[column_dict[mid.first]] * rangeSlackLower))) 
+          && ((curLine.getHPOS() + curLine.getWidth()) <= 
+            (rangeMax[column_dict[mid.first]] * rangeSlackHigher))) 
+      {
+        //when the line is classified as being part of more than one column 
+        if (debug == true) 
+        {
+          cout << "error!! " << endl;
+          cout << "current column median: " << mid.first << endl;
+          cout << "current block x: " << curLine.getHPOS() << endl;
+          cout << "current block width: " << curLine.getWidth() << endl;
+          cout << "current range Min: " << rangeMin[column_dict[mid.first]] << endl;
+          cout << "current range Max: " << rangeMax[column_dict[mid.first]] << endl;
+          cout << "columns should be of width: " << column_len << endl;
+          exit(1);
+        }
+        
+        this->columns[column_dict[mid.first]].push_back(curLine);
+        debug = true;
+      }
+    }
+  }
+
+  //now place multi-line columns inside the column vector
+  //repeat them for every column the line spans
+  
+  double minThreshold = 1.0;
+  double maxThreshold = 1.1; 
+  
+  for (int i = 0; i < this->columns.size(); i++)
+  {
+    for (auto curLine: this->nonSingleLines)
+    {
+      if ( (rangeMin[i] < ((curLine.getHPOS() + curLine.getWidth()) * minThreshold))
+          && (rangeMax[i] > (curLine.getHPOS() * maxThreshold)))
+      {
+        this->columns[i].push_back(curLine);
+      }
+    }
+  }
+
+  /* Now sort the column vectors */
+  vector<int> indexSort;
+
+  for (int i = 0; i < rangeMin.size(); i++)
+  {
+    indexSort.push_back(i);
+  }
+
+  std::sort(indexSort.begin(), indexSort.end(),
+      [&rangeMin](int a, int b){ return (rangeMin[a] < rangeMin[b]);});
+
+  for (int i = 0; i < indexSort.size(); i++)
+  {
+    sortedColumns.push_back(columns[indexSort[i]]);
+  }
+
+  for (int i = 0; i < sortedColumns.size(); i++)
+  {
+    sort(sortedColumns[i].begin(), sortedColumns[i].end(),
+        [](Textline a, Textline b){ return(a.getVPOS() < b.getVPOS());});
+  }
+
+
 }
 
-      
-      
 vector<Block> Segment::generate_invalid_zones(const string& json_file)
 {
   std::stringstream ss;
@@ -198,7 +311,7 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
          skipLine = true;
          }
          }
-      */
+         */
 
       if (!skipLine)
       {
@@ -207,7 +320,6 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
       }
     }
   }
-
   this->splitByColumn();
   Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
   img = blank;
@@ -215,6 +327,8 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
   //drawOriginal(filename, invalidZones);
 
   segment();
+
+
 }
 
 //need to further segment this part into functions. But ok for now.
@@ -544,62 +658,72 @@ void Segment::drawLines(bool orig)
   }
 
   /*
-  for (int i = 0; i < numOfLines; i++)
-  {
-    if (orig)
-    {
-      rHpos = origLines[i].getHPOS();
-      rVpos = origLines[i].getVPOS();
-      rHeight = origLines[i].getHeight();
-      rWidth = origLines[i].getWidth();
-    }
-    else
-    {
-      rHpos = lines[i].getHPOS();
-      rVpos = lines[i].getVPOS();
-      rHeight = lines[i].getHeight();
-      rWidth = lines[i].getWidth();
-    }
+     for (int i = 0; i < numOfLines; i++)
+     {
+     if (orig)
+     {
+     rHpos = origLines[i].getHPOS();
+     rVpos = origLines[i].getVPOS();
+     rHeight = origLines[i].getHeight();
+     rWidth = origLines[i].getWidth();
+     }
+     else
+     {
+     rHpos = lines[i].getHPOS();
+     rVpos = lines[i].getVPOS();
+     rHeight = lines[i].getHeight();
+     rWidth = lines[i].getWidth();
+     }
 
-    Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
+     Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
 
-    Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
-        , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
+     Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
+     , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
 
-    //if title, color red -- (255,0,0)
+  //if title, color red -- (255,0,0)
 
-    
-    if (lines[i].getLabel())
-      rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
-    else
-      rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
 
-    //rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+  if (lines[i].getLabel())
+  rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+  else
+  rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
+
+  //rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
   }
   */
 
   //DEBUGGING
   //print out lines per column
-  for (int i = 0; i < columns[0].size(); i++)
+
+  int redCount = 100;
+  int blueCount = 140;
+  int greenCount = 30;
+
+  //for (int j = 0; j < columns.size(); j++)
+  //{
+  cout << "Number of Columns = " << sortedColumns.size() << '\n';
+
+  for (int i = 0; i < sortedColumns[6].size(); i++)
   {
-    rHpos = columns[0][i].getHPOS();
-    rVpos = columns[0][i].getVPOS();
-    rHeight = columns[0][i].getHeight();
-    rWidth = columns[0][i].getWidth();
+    rHpos = sortedColumns[6][i].getHPOS();
+    rVpos = sortedColumns[6][i].getVPOS();
+    rHeight = sortedColumns[6][i].getHeight();
+    rWidth = sortedColumns[6][i].getWidth();
 
     Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
 
     Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
         , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
 
-    //if title, color red -- (255,0,0)
+    //rectangle(img, rP1, rP2, Scalar(blueCount,greenCount,redCount), 7);
 
-    
     rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
-
-    //rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
   }
 
+  blueCount = (blueCount + 40) % 255;
+  greenCount = (greenCount + 40) % 255;
+  redCount = (redCount + 40) % 255;
+  //}
 }
 
 void Segment::drawWords(bool orig)
@@ -612,7 +736,7 @@ void Segment::drawWords(bool orig)
 
   /* orig - refers to the original set of lines BEFORE
    * removing lines that fell into invalid zones 
-  */
+   */
   if (orig)
   {
     numOfLines = static_cast<int>(origLines.size());
@@ -655,7 +779,6 @@ void Segment::drawWords(bool orig)
 
 void Segment::writeImage(char* filename)
 {
-  cout << "GOT HERE!" << '\n';
   vector<int> compression_params;
   compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
   compression_params.push_back(50);
