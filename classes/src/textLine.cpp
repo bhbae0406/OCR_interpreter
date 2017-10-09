@@ -38,6 +38,9 @@ Textline::Textline(rapidxml::xml_node<>* textLine)
    int bestRightHPOS = 0;
    int bestBottomVPOS = 0;
 
+   //assume every line is not multiColumn for now
+   this->multiColumn = false;
+
    for (rapidxml::xml_node<>* word = textLine->first_node("String");
          word != 0; word = word->next_sibling("String"))
    {
@@ -178,6 +181,11 @@ void Textline::setID(int value)
 void Textline::setSubID(int value)
 {
    this->subID = value;
+}
+
+void Textline::setMultiCol()
+{
+  this->multiColumn = true;
 }
 
 double Textline::charAreaRatio()

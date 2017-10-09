@@ -1,4 +1,5 @@
 #include "segment.h"
+#include "block.h"
 #include <string.h>
 #include <string>
 #include <cstring>
@@ -21,6 +22,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "rapidjson/prettywriter.h"
 
 using namespace std;
 using namespace cv;
@@ -34,6 +36,16 @@ double Segment::convertToXML_h(double in)
 double Segment::convertToXML_v(double in)
 {
   return in * (double) pageHeight / (double)dimY;
+}
+
+double Segment::convertToImage_X(double inX)
+{
+  return inX * (double) dimX / (double)pageWidth;
+}
+
+double Segment::convertToImage_Y(double inY)
+{
+  return inY * (double) dimY / (double)pageHeight;
 }
 
 void Segment::splitByColumn() 
@@ -61,6 +73,15 @@ void Segment::splitByColumn()
   bool debug = false;
   for (auto curLine : this->lines) 
   {
+    //this line is a temporary fix for removing the header of the newspaper
+    //NOTE - this only works for 0033.xml
+    
+       if ((curLine.getVPOS() + curLine.getHeight()) <= (3616 + 20))
+       {
+       continue;
+       }
+      
+
     // is a valid column - determined by width of line (with slack)
     //  This mitigates the effect of OCR errors
     if ((curLine.getWidth() < column_len*slackupper)
@@ -120,9 +141,10 @@ void Segment::splitByColumn()
       count_notACol++;
 
       if ((curLine.getWidth() > column_len*slackupper)
-        && (curLine.getWidth() > column_len*slacklower)) 
+          && (curLine.getWidth() > column_len*slacklower)) 
       {
         this->nonSingleLines.push_back(curLine);
+        curLine.setMultiCol();
       }
       else
       {
@@ -163,7 +185,7 @@ void Segment::splitByColumn()
           cout << "columns should be of width: " << column_len << endl;
           exit(1);
         }
-        
+
         this->columns[column_dict[mid.first]].push_back(curLine);
         debug = true;
       }
@@ -172,10 +194,10 @@ void Segment::splitByColumn()
 
   //now place multi-line columns inside the column vector
   //repeat them for every column the line spans
-  
+
   double minThreshold = 1.0;
   double maxThreshold = 1.1; 
-  
+
   for (int i = 0; i < this->columns.size(); i++)
   {
     for (auto curLine: this->nonSingleLines)
@@ -210,7 +232,6 @@ void Segment::splitByColumn()
         [](Textline a, Textline b){ return(a.getVPOS() < b.getVPOS());});
   }
 
-
 }
 
 vector<Block> Segment::generate_invalid_zones(const string& json_file)
@@ -237,7 +258,7 @@ vector<Block> Segment::generate_invalid_zones(const string& json_file)
     Block curBlock(convertToXML_h(static_cast<double> (annotations[i]["x"].GetDouble())), 
         convertToXML_v(static_cast<double> (annotations[i]["y"].GetDouble())), 
         convertToXML_v(static_cast<double> (annotations[i]["height"].GetDouble())), 
-        convertToXML_h(static_cast<double> (annotations[i]["width"].GetDouble())), 0);
+        convertToXML_h(static_cast<double> (annotations[i]["width"].GetDouble())));
     invalid_zones.push_back(curBlock);
   }
   cout << json_file << " had " << invalid_zones.size() << " invalid zones!" << endl;
@@ -246,8 +267,11 @@ vector<Block> Segment::generate_invalid_zones(const string& json_file)
 
 void Segment::setDim(char* dimXcoord, char* dimYcoord)
 {
-  this->dimX = stoi(dimXcoord);
-  this->dimY = stoi(dimYcoord);
+  string dimXString(dimXcoord);
+  string dimYString(dimYcoord);
+
+  this->dimX = stoi(dimXString);
+  this->dimY = stoi(dimYString);
 }
 
 Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
@@ -281,7 +305,7 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
   //std::string json_file(jsonFile);
   /*Some error occuring in the line below */
   /* ERROR */
-  //setDim(dimX, dimY);
+  setDim(dimX, dimY);
   /* ERROR */
 
   //vector<Block> invalidZones = this->generate_invalid_zones(json_file);
@@ -320,7 +344,6 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
       }
     }
   }
-  this->splitByColumn();
   Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
   img = blank;
 
@@ -328,7 +351,8 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
 
   segment();
 
-
+  splitByColumn();
+  groupIntoBlocks();
 }
 
 //need to further segment this part into functions. But ok for now.
@@ -438,6 +462,173 @@ void Segment::segment()
   } //end 1st for 
 }
 
+void Segment::groupIntoBlocks()
+{
+  /* Use the sortedColumns vector to group regions into title/article regions */
+
+  double leftMostX = 0.0;
+  double rightMostX = 0.0;
+  double startY = 0.0;
+
+  double curX = 0.0;
+  double curRightX = 0.0;
+  double curTopY = 0.0;
+  double curBottomY = 0.0;
+  double prevBottomY = 0.0;
+  bool curLabel = false;
+  bool prevLabel = false;
+
+  bool startMultiBlock = false;
+  int count = 1; 
+
+  string blockContent = "";
+
+  vector<Textline::Word> wordsInLine;
+
+  for (int i = 0; i < sortedColumns.size(); i++)
+  {
+    for (int j = 0; j < sortedColumns[i].size(); j++)
+    {
+      Textline curLine = sortedColumns[i][j];
+
+      if (curLine.isLine("Star", 4))
+      {
+        cout << "GOT HERE!" << '\n';
+      }
+
+      if (curLine.isVisited())
+      {
+        continue;
+      }
+      else
+      {
+        curLine.setVisited();
+      }
+
+      curX = convertToImage_X(curLine.getHPOS());
+      curTopY = convertToImage_Y(curLine.getVPOS());
+      curBottomY = convertToImage_Y(curLine.getVPOS() + curLine.getHeight());
+      curRightX = convertToImage_X(curLine.getHPOS() + curLine.getWidth());
+      /*
+         curX = (curLine.getHPOS());
+         curTopY = (curLine.getVPOS());
+         curBottomY = (curLine.getVPOS() + curLine.getHeight());
+         curRightX = (curLine.getHPOS() + curLine.getWidth());
+      */
+
+      curLabel = curLine.getLabel();
+
+      if ((i == 0) && (j == 0))
+      {
+        if (curLine.isMulti())
+        {
+          startMultiBlock = true;
+        }
+
+        startY = curTopY;
+        leftMostX = curX;
+        rightMostX = curRightX;
+
+        wordsInLine = curLine.getWords();
+
+        for (size_t i = 0; i < wordsInLine.size(); i++)
+        {
+          blockContent += wordsInLine[i].content + " ";
+        }
+      }
+
+      else
+      {
+        if ((curLabel != prevLabel) || 
+            (startMultiBlock && (!curLine.isMulti())))
+        { 
+          startMultiBlock = false;
+
+          //removing the extra space at the end of the line
+          if (blockContent.size() > 0)
+          {
+            blockContent.pop_back();
+          }
+
+          /* End block, if not the very first block */
+          Block tempBlock(
+              leftMostX, //x
+              startY, //y
+              (prevBottomY - startY), //height
+              (rightMostX - leftMostX) //width
+              );
+
+          tempBlock.setLabel(prevLabel);
+
+          //setting all confidence levels to 0.9 for now
+          //need to implement this later
+          tempBlock.setConfidence(0.9);
+
+          tempBlock.setID(count);
+
+          tempBlock.setContent(blockContent);
+
+          regions.push_back(tempBlock);
+
+          /* Start new block */
+          if (curLine.isMulti())
+          {
+            startMultiBlock = true;
+          }
+
+          wordsInLine.clear();
+          blockContent = "";
+
+          wordsInLine = curLine.getWords();
+
+          for (size_t i = 0; i < wordsInLine.size(); i++)
+          {
+            blockContent += wordsInLine[i].content + " ";
+          }
+
+          count++;
+          startY = curTopY;
+          leftMostX = curX;
+          rightMostX = curRightX;
+        }
+
+        else
+        {
+          //update all block parameters
+          if (curX < leftMostX)
+            leftMostX = curX;
+          if (curRightX > rightMostX)
+            rightMostX = curRightX;
+
+          wordsInLine.clear();
+
+          wordsInLine = curLine.getWords();
+
+          //removes the extra space in the string
+          if (blockContent.size() > 0)
+          {
+            blockContent.pop_back();
+          }
+
+          //adds newline character to divide words into separate lines
+          blockContent += "\n";
+
+          for (size_t i = 0; i < wordsInLine.size(); i++)
+          {
+            blockContent += wordsInLine[i].content + " ";
+          }
+
+        }
+      }
+
+      prevLabel = curLabel;
+      prevBottomY = curBottomY;
+
+    }
+  }
+
+}
+
 double Segment::xmlHeight(Textline& line)
 {
   return (Ydimension * (double(line.getHeight()) / pageHeight));
@@ -455,7 +646,7 @@ double Segment::xmlVPOS(Textline& line)
 
 double Segment::xmlHPOS(Textline& line)
 {
-  return (Xdimension * (double(line.getWidth()) / pageWidth));
+  return (Xdimension * (double(line.getHPOS()) / pageWidth));
 }
 
 double Segment::distNextFour(int idx)
@@ -640,6 +831,46 @@ void Segment::drawOriginal(char* filename, std::vector<Block>& zones)
   img = origImage;
 }
 
+void Segment::drawBlocks()
+{
+  //ints because XML stores all parameters as integers
+  int topX = 0;
+  int topY = 0;
+  int blockHeight = 0;
+  int blockWidth = 0;
+
+  int ntopX = 0;
+  int ntopY = 0;
+  int nblockHeight = 0;
+  int nblockWidth = 0;
+
+  //cout << regions.size() << '\n';
+
+  double testValue = 100.0;
+
+  //cout << convertToXML_h(convertToImage_X(testValue)) << '\n';
+
+  for (auto curBlock: regions)
+  {
+    topX = convertToXML_h(curBlock.getX());
+    topY = convertToXML_v(curBlock.getY());
+    blockWidth = convertToXML_h(curBlock.getWidth());
+    blockHeight = convertToXML_v(curBlock.getHeight());
+
+    Point rP1((int)(Xdimension * (topX/(double)pageWidth)), 
+        (int)(Ydimension * (topY/(double)pageHeight)));
+
+    Point rP2(rP1.x + (int)(Xdimension * (blockWidth/(double)pageWidth))
+        , rP1.y + (int)(Ydimension * (blockHeight/(double)pageHeight)));
+
+    if (curBlock.getLabel())
+      rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+    else
+      rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
+
+  }
+}
+
 void Segment::drawLines(bool orig)
 {
   int rHpos;
@@ -657,42 +888,38 @@ void Segment::drawLines(bool orig)
     numOfLines = static_cast<int>(lines.size());
   }
 
-  /*
-     for (int i = 0; i < numOfLines; i++)
-     {
-     if (orig)
-     {
-     rHpos = origLines[i].getHPOS();
-     rVpos = origLines[i].getVPOS();
-     rHeight = origLines[i].getHeight();
-     rWidth = origLines[i].getWidth();
-     }
-     else
-     {
-     rHpos = lines[i].getHPOS();
-     rVpos = lines[i].getVPOS();
-     rHeight = lines[i].getHeight();
-     rWidth = lines[i].getWidth();
-     }
+  for (int i = 0; i < numOfLines; i++)
+  {
+    if (orig)
+    {
+      rHpos = origLines[i].getHPOS();
+      rVpos = origLines[i].getVPOS();
+      rHeight = origLines[i].getHeight();
+      rWidth = origLines[i].getWidth();
+    }
+    else
+    {
+      rHpos = lines[i].getHPOS();
+      rVpos = lines[i].getVPOS();
+      rHeight = lines[i].getHeight();
+      rWidth = lines[i].getWidth();
+    }
 
-     Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
+    Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
 
-     Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
-     , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
+    Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
+        , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
 
-  //if title, color red -- (255,0,0)
-
-
-  if (lines[i].getLabel())
-  rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
-  else
-  rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
-
-  //rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+    if (lines[i].getLabel())
+      rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+    else
+      rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
   }
-  */
 
+
+  /*
   //DEBUGGING
+
   //print out lines per column
 
   int redCount = 100;
@@ -703,27 +930,29 @@ void Segment::drawLines(bool orig)
   //{
   cout << "Number of Columns = " << sortedColumns.size() << '\n';
 
-  for (int i = 0; i < sortedColumns[6].size(); i++)
+  for (int i = 0; i < sortedColumns[2].size(); i++)
   {
-    rHpos = sortedColumns[6][i].getHPOS();
-    rVpos = sortedColumns[6][i].getVPOS();
-    rHeight = sortedColumns[6][i].getHeight();
-    rWidth = sortedColumns[6][i].getWidth();
+  rHpos = sortedColumns[2][i].getHPOS();
+  rVpos = sortedColumns[2][i].getVPOS();
+  rHeight = sortedColumns[2][i].getHeight();
+  rWidth = sortedColumns[2][i].getWidth();
 
-    Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
+  Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
 
-    Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
-        , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
+  Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
+  , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
 
-    //rectangle(img, rP1, rP2, Scalar(blueCount,greenCount,redCount), 7);
+  //rectangle(img, rP1, rP2, Scalar(blueCount,greenCount,redCount), 7);
 
-    rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+  rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
   }
 
   blueCount = (blueCount + 40) % 255;
   greenCount = (greenCount + 40) % 255;
   redCount = (redCount + 40) % 255;
   //}
+  */
+
 }
 
 void Segment::drawWords(bool orig)
@@ -787,7 +1016,94 @@ void Segment::writeImage(char* filename)
 
   fileName = fileName.substr(fileName.length() - 8, 4);
 
-  cout << "segImage_" + fileName + ".jpg" << '\n';
+  cout << "Written " << "segImage_" + fileName + ".jpg" << '\n';
 
   imwrite("segImage_" + fileName + ".jpg", img, compression_params);
+}
+
+void Segment::writeJSON(char* filename)
+{
+  string fileName(filename);
+
+  fileName = fileName.substr(fileName.length() - 8, 4);
+
+  rapidjson::Document d;
+  d.SetObject();
+
+  rapidjson::Document::AllocatorType& allocator = d.GetAllocator();
+
+  rapidjson::Value annotations(rapidjson::kArrayType);
+
+  string label = "";
+  string type = "rect";
+  string className = "xml";
+  string imageName = fileName + ".jpg";
+  string content = "";
+
+  for (int i = 0; i < regions.size(); i++)
+  {
+    rapidjson::Value obj(rapidjson::kObjectType);
+    rapidjson::Value val(rapidjson::kObjectType);
+
+    if (regions[i].getLabel())
+    {
+      label = "title";
+    }
+    else
+    {
+      label = "article";
+    }
+
+    val.SetString(label.c_str(), 
+        static_cast<rapidjson::SizeType>(label.length()), allocator);
+    obj.AddMember("class", val, allocator);
+    obj.AddMember("confidence", regions[i].getConfidence(), allocator);
+    obj.AddMember("height", regions[i].getHeight(), allocator);
+    obj.AddMember("id", regions[i].getID(), allocator);
+
+    val.SetString(type.c_str(), 
+        static_cast<rapidjson::SizeType>(type.length()), allocator);
+
+    obj.AddMember("type", val, allocator);
+    obj.AddMember("width", regions[i].getWidth(), allocator);
+    obj.AddMember("x", regions[i].getX(), allocator);
+    obj.AddMember("y", regions[i].getY(), allocator);
+
+    content = regions[i].getContent();
+    
+    val.SetString(content.c_str(),
+        static_cast<rapidjson::SizeType>(content.length()), allocator);
+
+    obj.AddMember("content", val, allocator);
+
+    annotations.PushBack(obj, allocator);
+  }
+
+  rapidjson::Value val(rapidjson::kObjectType);
+
+  d.AddMember("annotations", annotations, allocator);
+
+  val.SetString(className.c_str(), 
+      static_cast<rapidjson::SizeType>(className.length()), allocator);
+
+  d.AddMember("class", val, allocator);
+
+  val.SetString(imageName.c_str(), 
+      static_cast<rapidjson::SizeType>(imageName.length()), allocator);
+
+  d.AddMember("filename", val, allocator);
+
+  const rapidjson::Value& annotate = d["annotations"];
+  //cout << "Number of Annotations = " << annotate.Size() << '\n';
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+  d.Accept(writer);
+
+  std::ofstream outFile;
+  outFile.open(fileName + "_xml.json");
+
+  outFile << buffer.GetString() << std::endl;
+
+  cout << "Written " << fileName + "_xml.json" << '\n';
 }

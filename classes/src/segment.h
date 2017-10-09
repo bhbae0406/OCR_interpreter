@@ -18,6 +18,9 @@ class Segment
       double convertToXML_h(double in);
       double convertToXML_v(double in);
 
+      double convertToImage_X(double inX);
+      double convertToImage_Y(double inY);
+
       vector<Block> generate_invalid_zones(const string& json_file);
       void splitByColumn();
       void setDim(char* dimXcoord, char* dimYcoord);
@@ -35,6 +38,9 @@ class Segment
        */
 
       void segment();
+    
+      void groupIntoBlocks();
+
       double xmlHeight(Textline& line);
       double xmlWidth(Textline& line);
       double xmlVPOS(Textline& line);
@@ -58,9 +64,13 @@ class Segment
             int thickness, int lineType);
 
       void drawOriginal(char* filename, std::vector<Block>& zones);
+
+      void drawBlocks();
+
       void drawLines(bool orig);
       void drawWords(bool orig);
       void writeImage(char* filename);
+      void writeJSON(char* filename);
 
    private:
       vector<Textline> lines;
@@ -69,6 +79,9 @@ class Segment
       vector<vector<Textline>> sortedColumns;
       vector<Textline> nonSingleLines;
       vector<Textline> smallWidthLines;
+
+      //TITLE AND ARTICLE REGIONS
+      vector<Block> regions; 
 
       //IMAGE
       cv::Mat img;

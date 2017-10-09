@@ -59,7 +59,9 @@ class Textline
       void setID(int value);
       void setSubID(int value);
 
-      /* For each word in line, calculates (Area of Word) / (Num Characers in Word).
+      void setMultiCol();
+
+      /* For each word in line, calculates (Area of Word) / (Num Characters in Word).
        * Sorts these ratios and returns the median ratio
        */
       double charAreaRatio();
