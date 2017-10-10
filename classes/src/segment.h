@@ -13,123 +13,134 @@ using namespace cv;
 
 class Segment
 {
-   public:
+  public:
 
-      double convertToXML_h(double in);
-      double convertToXML_v(double in);
+    double convertToXML_h(double in);
+    double convertToXML_v(double in);
 
-      double convertToImage_X(double inX);
-      double convertToImage_Y(double inY);
+    double convertToImage_X(double inX);
+    double convertToImage_Y(double inY);
 
-      vector<Block> generate_invalid_zones(const string& json_file);
-      void splitByColumn();
-      void setDim(char* dimXcoord, char* dimYcoord);
-      //CONSTRUCTOR
-       /* This will use rapidxml to read through the document and:
-       * 1) Construct all Textline objects and place in vector "lines"
-       * 2) Initialize the page attributes, pageWidth and pageHeight
-       */
-      Segment(char* filename, char* jsonFile, char* dimX, char* dimY);
+    vector<Block> generate_invalid_zones(const string& json_file);
+    void splitByColumn();
+    void setDim(char* dimXcoord, char* dimYcoord);
+    //CONSTRUCTOR
+    /* This will use rapidxml to read through the document and:
+     * 1) Construct all Textline objects and place in vector "lines"
+     * 2) Initialize the page attributes, pageWidth and pageHeight
+     */
+    Segment(char* filename, char* jsonFile, char* dimX, char* dimY);
 
-      /* The following four functions are used to normalize the height, width,
-       * VPOS, and HPOS. This is necessary because different newspapers have
-       * different pageWidths and pageHeights. Therefore, for the thresholds
-       * to work correctly, these attributes need to be normalized.
-       */
+    /* The following four functions are used to normalize the height, width,
+     * VPOS, and HPOS. This is necessary because different newspapers have
+     * different pageWidths and pageHeights. Therefore, for the thresholds
+     * to work correctly, these attributes need to be normalized.
+     */
 
-      void segment();
-    
-      void groupIntoBlocks();
+    void segmentWithColumns();
 
-      double xmlHeight(Textline& line);
-      double xmlWidth(Textline& line);
-      double xmlVPOS(Textline& line);
-      double xmlHPOS(Textline& line);
+    void segment();
 
-      //distance from current line to the third line below it. May need to fix later.
-      double distNextFour(int idx);
-      bool centeredLine(int idx, int leftThresh, int rightThresh);
-      double distPrevOne(int idx);
-      double distNextOne(int idx);
+    void groupIntoBlocks();
 
-      /* DEBUGGING TOOL
-       * Will print out the content of the lines in the order of
-       * the vector "lines". 
-       */
+    double xmlHeight(Textline& line);
+    double xmlWidth(Textline& line);
+    double xmlVPOS(Textline& line);
+    double xmlHPOS(Textline& line);
 
-      void printLines();
+    //distance from current line to the third line below it. May need to fix later.
+    double distNextFour(int idx);
+    bool centeredLine(int idx, int leftThresh, int rightThresh);
+    double distPrevOne(int idx);
+    double distNextOne(int idx);
 
-      void PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
-            const cv::Scalar& color, int fontFace, double fontScale, 
-            int thickness, int lineType);
+    /* DEBUGGING TOOL
+     * Will print out the content of the lines in the order of
+     * the vector "lines". 
+     */
 
-      void drawOriginal(char* filename, std::vector<Block>& zones);
+    void printLines();
 
-      void drawBlocks();
+    void PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
+        const cv::Scalar& color, int fontFace, double fontScale, 
+        int thickness, int lineType);
 
-      void drawLines(bool orig);
-      void drawWords(bool orig);
-      void writeImage(char* filename);
-      void writeJSON(char* filename);
+    void drawOriginal(char* filename, std::vector<Block>& zones);
 
-   private:
-      vector<Textline> lines;
-      vector<Textline> origLines;
-      vector<vector<Textline>> columns;
-      vector<vector<Textline>> sortedColumns;
-      vector<Textline> nonSingleLines;
-      vector<Textline> smallWidthLines;
+    void drawBlocks();
 
-      //TITLE AND ARTICLE REGIONS
-      vector<Block> regions; 
+    void drawLines(bool orig);
+    void drawWords(bool orig);
+    void writeImage(char* filename);
+    void writeJSON(char* filename);
 
-      //IMAGE
-      cv::Mat img;
+  private:
+    vector<Textline> lines;
+    vector<Textline> origLines;
+    vector<vector<Textline>> columns;
+    vector<vector<Textline>> sortedColumns;
+    vector<Textline> nonSingleLines;
+    vector<Textline> smallWidthLines;
 
-      //IMAGE ATTRIBUTE CONSTANTS
-      int Xdimension;
-      int Ydimension;
+    //TITLE AND ARTICLE REGIONS
+    vector<Block> regions; 
 
-      //PAGE ATTRIBUTE CONSTANTS
-      //UNKNOWN - must get from XML layout
-      int pageWidth;
-      int pageHeight;
-      int numLines;
-      int dimX;
-      int dimY;
+    //IMAGE
+    cv::Mat img;
 
-      //THRESHOLD CONTANTS
-      double heightThresh;
-      int diffThresh;
-      double CAThresh;
-      double distThresh;
-      int prevThresh;
-      int nextThresh;
+    //IMAGE ATTRIBUTE CONSTANTS
+    int Xdimension;
+    int Ydimension;
+
+    //PAGE ATTRIBUTE CONSTANTS
+    //UNKNOWN - must get from XML layout
+    int pageWidth;
+    int pageHeight;
+    int numLines;
+    int dimX;
+    int dimY;
+
+    //THRESHOLD CONTANTS
+    double heightThresh;
+    int diffThresh;
+    double CAThresh;
+    double distThresh;
+    int prevThresh;
+    int nextThresh;
 };
 
 // Comparators
 struct columnLengthComparator 
 {
-   bool operator()(const Textline& a , const Textline& b)
-   {
-      return a.getWidth() < b.getWidth();
-   }
+  bool operator()(const Textline& a , const Textline& b)
+  {
+    return a.getWidth() < b.getWidth();
+  }
+};
+
+struct lineHeightComparator
+{
+  bool operator()(const Textline& a, const Textline& b)
+  {
+    return a.getHeight() < b.getHeight();
+  }
+
 };
 
 struct columnSortComparator
 {
-   bool operator()(vector<Textline>& a, vector<Textline>& b)
-   {
-      return a[0].getHPOS() < b[0].getHPOS();
-   }
+  bool operator()(vector<Textline>& a, vector<Textline>& b)
+  {
+    return a[0].getHPOS() < b[0].getHPOS();
+  }
 };
 
 struct lineSortComparator 
 {
-   bool operator()(Textline& a , Textline& b)
-   {
-      return a.getVPOS() < b.getVPOS();
-   }
+  bool operator()(Textline& a , Textline& b)
+  {
+    return a.getVPOS() < b.getVPOS();
+  }
 };
 
 #endif

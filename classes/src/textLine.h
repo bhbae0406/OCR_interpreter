@@ -77,6 +77,8 @@ class Textline
        */
       bool capLine(bool allCaps);
 
+      double capitalWordsRatio(bool allCaps);
+
       /* DEBUGGING TOOL
        * Determines if this line contains the word and is of numWords in length
        */

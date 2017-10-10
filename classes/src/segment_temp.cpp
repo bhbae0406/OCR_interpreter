@@ -76,11 +76,13 @@ void Segment::splitByColumn()
     //this line is a temporary fix for removing the header of the newspaper
     //NOTE - this only works for 0033.xml
     
+    
        if ((curLine.getVPOS() + curLine.getHeight()) <= (3616 + 20))
        {
        continue;
        }
       
+   
 
     // is a valid column - determined by width of line (with slack)
     //  This mitigates the effect of OCR errors
@@ -103,7 +105,8 @@ void Segment::splitByColumn()
             cout << "current block x: " << curLine.getHPOS() << endl;
             cout << "current block width: " << curLine.getWidth() << endl;
             cout << "columns should be of width: " << column_len << endl;
-            exit(1);
+
+            continue;
           }
 
           this->columns[column_dict[mid.first]].push_back(curLine);
@@ -139,12 +142,12 @@ void Segment::splitByColumn()
     else 
     {
       count_notACol++;
-
+    
       if ((curLine.getWidth() > column_len*slackupper)
           && (curLine.getWidth() > column_len*slacklower)) 
       {
-        this->nonSingleLines.push_back(curLine);
         curLine.setMultiCol();
+        this->nonSingleLines.push_back(curLine);
       }
       else
       {
@@ -183,7 +186,8 @@ void Segment::splitByColumn()
           cout << "current range Min: " << rangeMin[column_dict[mid.first]] << endl;
           cout << "current range Max: " << rangeMax[column_dict[mid.first]] << endl;
           cout << "columns should be of width: " << column_len << endl;
-          exit(1);
+
+          continue;
         }
 
         this->columns[column_dict[mid.first]].push_back(curLine);
@@ -302,13 +306,16 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
   this->Xdimension = 9500;
   this->Ydimension = 9600;
 
-  //std::string json_file(jsonFile);
-  /*Some error occuring in the line below */
-  /* ERROR */
   setDim(dimX, dimY);
-  /* ERROR */
 
   //vector<Block> invalidZones = this->generate_invalid_zones(json_file);
+  
+  int wordPrevHPOS = 0;
+  int wordCurHPOS = 0;
+
+  int curNumWords = 0;
+
+  vector<rapidxml::xml_node<>*> words;
 
   xml_node<>* first_textBlock = page_node->first_node("PrintSpace")
     ->first_node("TextBlock");
@@ -319,9 +326,38 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
     for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
         textLine != 0; textLine = textLine->next_sibling("TextLine"))
     {
+
+      /*
+      curNumWords = 0;
+      wordPrevHPOS = 0;
+      wordCurHPOS = 0;
+      words.clear();
+
+      for (rapidxml::xml_node<>* word = textLine->first_node("String");
+          word != 0; word = word->next_sibling("String"))
+      {
+        wordCurHPOS = atoi(word->first_attribute("HPOS")->value());
+        words.push_back(word);
+
+        if (curNumWords > 0)
+        {
+          if (abs(wordCurHPOS - wordPrevHPOS) > 200)
+          {
+            Textline newLine(words);
+            this->lines.push_back(newLine);
+            words.clear();
+          }
+        }
+
+        wordPrevHPOS = wordCurHPOS;
+        curNumWords++;
+      }
+      */
+
+      //Textline newLine(words);
       Textline newLine(textLine);
 
-      origLines.push_back(textLine);
+      //origLines.push_back(textLine);
 
       //used to ignore any lines that fall into invalid regions
       //as indicated by .json file given from image processing
@@ -349,10 +385,92 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
 
   //drawOriginal(filename, invalidZones);
 
-  segment();
+  //segment();
 
   splitByColumn();
+  //segment();
+  segmentWithColumns();
+
   groupIntoBlocks();
+}
+
+void Segment::segmentWithColumns()
+{
+  //deciding value
+  double finalValue = 0.0;
+
+  //ALL PARAMETERS (each ranging from 0 to 1)
+  double weightHeight = 0.5;
+  double weightCapitalWords = 0.35;
+  double weightCapitalLetters = 0.7;
+  double weightCharArea = 0.0;
+  double heightThresh = 50;
+
+  //values are either 0 or 1
+  int inHeightRange = 0;
+
+  //values are double (range is from 0 to 1)
+  double ratioCapitalWords = 0.0;
+  double ratioCapitalLetters = 0.0;
+  double ratioCharArea = 0.0;
+  
+  double differenceHeight = 0.0;
+
+  //temporary variables
+  vector<Textline::Word> lineWords;
+
+  //find the most average height of article lines
+  lineHeightComparator comp;
+  sort(this->lines.begin(), this->lines.end(), comp);
+
+  double articleHeight = lines[lines.size()/2].getHeight();
+
+  for (int i = 0; i < sortedColumns.size(); i++)
+  {
+    for (auto &curLine : sortedColumns[i])
+    {
+
+      if (curLine.isLine("anothTrship", 1))
+      {
+        cout << "GOT HERE!" << '\n';
+      }
+  
+      //HEIGHT CHECK
+      differenceHeight = abs(curLine.getHeight() - articleHeight);
+
+      //inHeightRange = differenceHeight / heightThresh;
+
+      if (differenceHeight <= heightThresh)
+      {
+        inHeightRange = 0;
+      }
+      else
+      {
+        inHeightRange = differenceHeight / heightThresh;
+      }
+
+      //FIND RATIO OF CAPITAL WORDS
+      ratioCapitalWords = curLine.capitalWordsRatio(false);
+      ratioCapitalLetters = curLine.capitalWordsRatio(true);
+      
+      //RATIO OF NUMBER OF CHARACTERS TO AREA
+      ratioCharArea = curLine.charAreaRatio();
+
+      finalValue = (weightHeight * inHeightRange) +
+                   (weightCapitalWords * ratioCapitalWords) +
+                   (weightCapitalLetters * ratioCapitalLetters) +
+                   (weightCharArea * ratioCharArea);
+
+      if (finalValue > 0.6)
+      {
+        curLine.setLabel(true);
+      }
+      else
+      {
+        curLine.setLabel(false);
+      }
+    }
+  }
 }
 
 //need to further segment this part into functions. But ok for now.
@@ -873,12 +991,13 @@ void Segment::drawBlocks()
 
 void Segment::drawLines(bool orig)
 {
+  
   int rHpos;
   int rVpos;
   int rHeight;
   int rWidth;
-  int numOfLines = 0;
 
+  /*
   if (orig)
   {
     numOfLines = static_cast<int>(origLines.size());
@@ -916,42 +1035,37 @@ void Segment::drawLines(bool orig)
       rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
   }
 
-
-  /*
+  */
+  
   //DEBUGGING
 
-  //print out lines per column
-
-  int redCount = 100;
-  int blueCount = 140;
-  int greenCount = 30;
-
-  //for (int j = 0; j < columns.size(); j++)
-  //{
-  cout << "Number of Columns = " << sortedColumns.size() << '\n';
-
-  for (int i = 0; i < sortedColumns[2].size(); i++)
+  for (int i = 0; i < sortedColumns.size(); i++)
   {
-  rHpos = sortedColumns[2][i].getHPOS();
-  rVpos = sortedColumns[2][i].getVPOS();
-  rHeight = sortedColumns[2][i].getHeight();
-  rWidth = sortedColumns[2][i].getWidth();
+    for (int j = 0; j < sortedColumns[i].size(); j++)
+    {
+      rHpos = sortedColumns[i][j].getHPOS();
+      rVpos = sortedColumns[i][j].getVPOS();
+      rHeight = sortedColumns[i][j].getHeight();
+      rWidth = sortedColumns[i][j].getWidth();
 
-  Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
+      Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
 
-  Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
-  , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
+      Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
+      , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
 
-  //rectangle(img, rP1, rP2, Scalar(blueCount,greenCount,redCount), 7);
+      //rectangle(img, rP1, rP2, Scalar(blueCount,greenCount,redCount), 7);
 
-  rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+      if (sortedColumns[i][j].getLabel())
+      {
+        rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+      }
+
+      else
+      {
+        rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
+      }
+    }
   }
-
-  blueCount = (blueCount + 40) % 255;
-  greenCount = (greenCount + 40) % 255;
-  redCount = (redCount + 40) % 255;
-  //}
-  */
 
 }
 
