@@ -33,7 +33,8 @@ class Textline
        * Takes in an xml_node<>*, gathers line attributes,
        * and stores them in private variables
        */
-      Textline(rapidxml::xml_node<>* textLine);
+      //Textline(rapidxml::xml_node<>* textLine);
+      Textline(vector<rapidxml::xml_node<>*>& words);
 
       //found in stack overflow
       //http://stackoverflow.com/questions/306316/determine-if-two-rectangles-overlap-each-other

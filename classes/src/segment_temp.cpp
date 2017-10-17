@@ -73,16 +73,20 @@ void Segment::splitByColumn()
   bool debug = false;
   for (auto curLine : this->lines) 
   {
+    if (curLine.isLine("territory", 4))
+    {
+      cout << "GOT HERE 1" << '\n';
+    }
     //this line is a temporary fix for removing the header of the newspaper
     //NOTE - this only works for 0033.xml
     
     
+    /*
        if ((curLine.getVPOS() + curLine.getHeight()) <= (3616 + 20))
        {
        continue;
        }
-      
-   
+    */
 
     // is a valid column - determined by width of line (with slack)
     //  This mitigates the effect of OCR errors
@@ -119,7 +123,7 @@ void Segment::splitByColumn()
           }
 
           if ((curLine.getHPOS() + curLine.getWidth())
-              > rangeMin[column_dict[mid.first]])
+              > rangeMax[column_dict[mid.first]])
           {
             rangeMax[column_dict[mid.first]] = curLine.getHPOS() + curLine.getWidth();
           }
@@ -147,10 +151,21 @@ void Segment::splitByColumn()
           && (curLine.getWidth() > column_len*slacklower)) 
       {
         curLine.setMultiCol();
+
+        if (curLine.isLine("territory", 4))
+        {
+          cout << "GOT HERE - nonSingle" << '\n';
+        }
+
         this->nonSingleLines.push_back(curLine);
       }
       else
       {
+        if (curLine.isLine("territory", 4))
+        {
+          cout << "GOT HERE - smallWidth" << '\n';
+        }
+
         this->smallWidthLines.push_back(curLine);
       }
     }
@@ -168,6 +183,13 @@ void Segment::splitByColumn()
 
   for (auto curLine : this->smallWidthLines) 
   {
+    if (curLine.isLine("territory", 4))
+    {
+      cout << "GOT HERE - judging small width" << '\n';
+      cout << "HPOS = " << curLine.getHPOS() << '\n';
+      cout << "HPOS + WIDTH = " << curLine.getHPOS() + curLine.getWidth() << '\n';
+    }
+
     debug = false;
     for (auto mid : column_dict) 
     {
@@ -176,6 +198,18 @@ void Segment::splitByColumn()
           && ((curLine.getHPOS() + curLine.getWidth()) <= 
             (rangeMax[column_dict[mid.first]] * rangeSlackHigher))) 
       {
+        if (curLine.isLine("nati.", 1))
+        {
+          cout << "GOT HERE - nati, passed small width test" << '\n';
+          cout << "MIN RANGE = " << rangeMin[column_dict[mid.first]] * rangeSlackLower << '\n';
+          cout << "MAX RANGE = " << rangeMax[column_dict[mid.first]] * rangeSlackLower << '\n';
+        }
+  
+        if (curLine.isLine("territory", 4))
+        {
+          cout << "GOT HERE - passed small width test" << '\n';
+        }
+
         //when the line is classified as being part of more than one column 
         if (debug == true) 
         {
@@ -206,9 +240,19 @@ void Segment::splitByColumn()
   {
     for (auto curLine: this->nonSingleLines)
     {
+      if (curLine.isLine("territory" , 4))
+      {
+        cout << "GOT HERE - nonSingleLineTest" << '\n';
+      }
+
       if ( (rangeMin[i] < ((curLine.getHPOS() + curLine.getWidth()) * minThreshold))
           && (rangeMax[i] > (curLine.getHPOS() * maxThreshold)))
       {
+        if (curLine.isLine("territory", 4))
+        {
+          cout << "GOT HERE - passed nonSingleLineTest" << '\n';
+        }
+
         this->columns[i].push_back(curLine);
       }
     }
@@ -310,10 +354,14 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
 
   //vector<Block> invalidZones = this->generate_invalid_zones(json_file);
   
-  int wordPrevHPOS = 0;
-  int wordCurHPOS = 0;
+  int wordPrevVPOS = 0;
+  int wordCurVPOS = 0;
 
   int curNumWords = 0;
+
+  //temp variable
+  int a = 0;
+  string content;
 
   vector<rapidxml::xml_node<>*> words;
 
@@ -326,36 +374,45 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
     for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
         textLine != 0; textLine = textLine->next_sibling("TextLine"))
     {
-
-      /*
       curNumWords = 0;
-      wordPrevHPOS = 0;
-      wordCurHPOS = 0;
+      wordPrevVPOS = 0;
+      wordCurVPOS = 0;
       words.clear();
 
       for (rapidxml::xml_node<>* word = textLine->first_node("String");
           word != 0; word = word->next_sibling("String"))
       {
-        wordCurHPOS = atoi(word->first_attribute("HPOS")->value());
+        //words.push_back(word);
+
+        content = word->first_attribute("CONTENT")->value();
+        
+        if (!strcmp(word->first_attribute("CONTENT")->value(),"nati."))
+        {
+          cout << "GOT HERE" << '\n';
+          a += 2;
+        }
+
+        wordCurVPOS = atoi(word->first_attribute("VPOS")->value());
         words.push_back(word);
 
         if (curNumWords > 0)
         {
-          if (abs(wordCurHPOS - wordPrevHPOS) > 200)
+          if (abs(wordCurVPOS - wordPrevVPOS) > 60) 
           {
+            words.pop_back();
             Textline newLine(words);
             this->lines.push_back(newLine);
+            this->numLines += 1;
             words.clear();
           }
         }
 
-        wordPrevHPOS = wordCurHPOS;
+        wordPrevVPOS = wordCurVPOS;
         curNumWords++;
       }
-      */
 
-      //Textline newLine(words);
-      Textline newLine(textLine);
+      Textline newLine(words);
+      //Textline newLine(textLine);
 
       //origLines.push_back(textLine);
 
@@ -429,12 +486,11 @@ void Segment::segmentWithColumns()
   {
     for (auto &curLine : sortedColumns[i])
     {
-
-      if (curLine.isLine("anothTrship", 1))
+      if (curLine.isLine("territory", 4))
       {
-        cout << "GOT HERE!" << '\n';
+        cout << "GOT HERE 2" << '\n';
       }
-  
+      
       //HEIGHT CHECK
       differenceHeight = abs(curLine.getHeight() - articleHeight);
 
@@ -609,9 +665,9 @@ void Segment::groupIntoBlocks()
     {
       Textline curLine = sortedColumns[i][j];
 
-      if (curLine.isLine("Star", 4))
+      if (curLine.isLine("territory", 4))
       {
-        cout << "GOT HERE!" << '\n';
+        cout << "GOT HERE 3" << '\n';
       }
 
       if (curLine.isVisited())
@@ -1043,6 +1099,13 @@ void Segment::drawLines(bool orig)
   {
     for (int j = 0; j < sortedColumns[i].size(); j++)
     {
+      /*
+      if (sortedColumns[i][j].isLine("nati.", 1))
+      {
+        cout << "GOT HERE 3" << '\n';
+      }
+      */
+
       rHpos = sortedColumns[i][j].getHPOS();
       rVpos = sortedColumns[i][j].getVPOS();
       rHeight = sortedColumns[i][j].getHeight();
@@ -1154,6 +1217,59 @@ void Segment::writeJSON(char* filename)
   string imageName = fileName + ".jpg";
   string content = "";
 
+  //test using each line as its own block
+  
+  int count = 0;
+
+  for (int i = 0; i < sortedColumns.size(); i++)
+  {
+    for (auto curLine: sortedColumns[i])
+    {
+      rapidjson::Value obj(rapidjson::kObjectType);
+      rapidjson::Value val(rapidjson::kObjectType);
+
+      if (curLine.getLabel())
+      {
+        label = "title";
+      }
+      else
+      {
+        label = "article";
+      }
+
+      val.SetString(label.c_str(), 
+          static_cast<rapidjson::SizeType>(label.length()), allocator);
+      obj.AddMember("class", val, allocator);
+      obj.AddMember("confidence", 0.9, allocator);
+      obj.AddMember("height", convertToImage_Y(curLine.getHeight()), allocator);
+      obj.AddMember("id", count, allocator);
+
+      //temp id
+      count++;
+
+      val.SetString(type.c_str(), 
+          static_cast<rapidjson::SizeType>(type.length()), allocator);
+
+      obj.AddMember("type", val, allocator);
+      obj.AddMember("width", convertToImage_X(curLine.getWidth()), allocator);
+      obj.AddMember("x", convertToImage_X(curLine.getHPOS()), allocator);
+      obj.AddMember("y", convertToImage_Y(curLine.getVPOS()), allocator);
+
+      /*
+      content = regions[i].getContent();
+      
+      val.SetString(content.c_str(),
+          static_cast<rapidjson::SizeType>(content.length()), allocator);
+
+      obj.AddMember("content", val, allocator);
+      */
+
+      annotations.PushBack(obj, allocator);
+    }
+  }
+
+
+  /*
   for (int i = 0; i < regions.size(); i++)
   {
     rapidjson::Value obj(rapidjson::kObjectType);
@@ -1192,6 +1308,7 @@ void Segment::writeJSON(char* filename)
 
     annotations.PushBack(obj, allocator);
   }
+  */
 
   rapidjson::Value val(rapidjson::kObjectType);
 

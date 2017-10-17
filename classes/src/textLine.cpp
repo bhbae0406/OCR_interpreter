@@ -20,18 +20,9 @@
 
 using namespace std;
 
-Textline::Textline(rapidxml::xml_node<>* textLine)
-  //Textline::Textline(vector<rapidxml::xml_node<>*>& words)
+//Textline::Textline(rapidxml::xml_node<>* textLine)
+Textline::Textline(vector<rapidxml::xml_node<>*>& words)
 {
-  /* Attributes given by xml; should remove comments once the code is working
-   * with the alternative attributes given the words in the line.
-   *
-   this->hPos = textLine->first_attribute("HPOS")->value();
-   this->vPos = textLine->first_attribute("VPOS")->value();
-   this->height = textLine->first_attribute("HEIGHT")->value();
-   this->width = textLine->first_attribute("WIDTH")->value();
-   */   
-
   this->numWords = 0;
   //these value will store the best attributes for the line
   int bestHPOS = 0;
@@ -44,10 +35,9 @@ Textline::Textline(rapidxml::xml_node<>* textLine)
 
   int prevHPOS = 0;
 
-
-  for (rapidxml::xml_node<>* word = textLine->first_node("String");
-      word != 0; word = word->next_sibling("String"))
-    //for (rapidxml::xml_node<>* word : words)
+  //for (rapidxml::xml_node<>* word = textLine->first_node("String");
+  //    word != 0; word = word->next_sibling("String"))
+  for (rapidxml::xml_node<>* word : words)
   {
     Word newWord;
     newWord.hPos = atoi(word->first_attribute("HPOS")->value());
