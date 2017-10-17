@@ -179,7 +179,7 @@ void Segment::splitByColumn()
    */
 
   double rangeSlackLower = 0.99;
-  double rangeSlackHigher = 0.99;
+  double rangeSlackHigher = 1.00;
 
   for (auto curLine : this->smallWidthLines) 
   {
@@ -233,8 +233,8 @@ void Segment::splitByColumn()
   //now place multi-line columns inside the column vector
   //repeat them for every column the line spans
 
-  double minThreshold = 1.0;
-  double maxThreshold = 1.1; 
+  double minThreshold = 0.9;
+  double maxThreshold = 1.4; 
 
   for (int i = 0; i < this->columns.size(); i++)
   {
@@ -357,6 +357,11 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
   int wordPrevVPOS = 0;
   int wordCurVPOS = 0;
 
+  int wordPrevHeight = 0;
+  int wordCurHeight = 0;
+  int wordPrevWidth = 0;
+  int wordCurWidth = 0;
+
   int curNumWords = 0;
 
   //temp variable
@@ -364,6 +369,7 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
   string content;
 
   vector<rapidxml::xml_node<>*> words;
+  rapidxml::xml_node<>* wordTemp;
 
   xml_node<>* first_textBlock = page_node->first_node("PrintSpace")
     ->first_node("TextBlock");
@@ -377,6 +383,11 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
       curNumWords = 0;
       wordPrevVPOS = 0;
       wordCurVPOS = 0;
+      wordPrevHeight = 0;
+      wordCurHeight = 0;
+      wordPrevWidth = 0;
+      wordCurWidth = 0;
+
       words.clear();
 
       for (rapidxml::xml_node<>* word = textLine->first_node("String");
@@ -393,21 +404,35 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
         }
 
         wordCurVPOS = atoi(word->first_attribute("VPOS")->value());
+        wordCurHeight = atoi(word->first_attribute("HEIGHT")->value());
+        wordCurWidth = atoi(word->first_attribute("WIDTH")->value());
+
         words.push_back(word);
 
         if (curNumWords > 0)
         {
+          if (abs(wordCurHeight - wordPrevHeight) > 2000 ||
+              abs(wordCurWidth - wordPrevWidth) > 2000)
+          {
+            words.pop_back(); //skip word
+          }
+
           if (abs(wordCurVPOS - wordPrevVPOS) > 60) 
           {
+            wordTemp = words.back();
             words.pop_back();
             Textline newLine(words);
             this->lines.push_back(newLine);
             this->numLines += 1;
             words.clear();
+            words.push_back(wordTemp);
           }
         }
 
         wordPrevVPOS = wordCurVPOS;
+        wordPrevHeight = wordCurHeight;
+        wordPrevWidth = wordCurWidth;
+
         curNumWords++;
       }
 
@@ -1090,21 +1115,21 @@ void Segment::drawLines(bool orig)
     else
       rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
   }
-
   */
-  
+
   //DEBUGGING
 
   for (int i = 0; i < sortedColumns.size(); i++)
   {
+  //int i = 3;
     for (int j = 0; j < sortedColumns[i].size(); j++)
     {
-      /*
+     
       if (sortedColumns[i][j].isLine("nati.", 1))
       {
         cout << "GOT HERE 3" << '\n';
       }
-      */
+     
 
       rHpos = sortedColumns[i][j].getHPOS();
       rVpos = sortedColumns[i][j].getVPOS();
@@ -1129,6 +1154,7 @@ void Segment::drawLines(bool orig)
       }
     }
   }
+  
 
 }
 
