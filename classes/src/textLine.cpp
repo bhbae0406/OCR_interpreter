@@ -184,6 +184,11 @@ void Textline::setMultiCol()
   this->multiColumn = true;
 }
 
+void Textline::setConfidence(double val)
+{ 
+  this->confidence = val;
+}
+
 double Textline::charAreaRatio()
 {
   double area = 0.0;

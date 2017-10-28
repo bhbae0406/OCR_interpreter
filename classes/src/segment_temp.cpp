@@ -82,10 +82,12 @@ void Segment::splitByColumn()
     
     
     /*
+    
        if ((curLine.getVPOS() + curLine.getHeight()) <= (3616 + 20))
        {
        continue;
        }
+    
     */
 
     // is a valid column - determined by width of line (with slack)
@@ -487,6 +489,7 @@ void Segment::segmentWithColumns()
   double weightCapitalLetters = 0.7;
   double weightCharArea = 0.0;
   double heightThresh = 50;
+  double gapThresh = 200;
 
   //values are either 0 or 1
   int inHeightRange = 0;
@@ -507,10 +510,20 @@ void Segment::segmentWithColumns()
 
   double articleHeight = lines[lines.size()/2].getHeight();
 
+  int prevVPOS = 0;
+  int curVPOS = 0;
+
   for (int i = 0; i < sortedColumns.size(); i++)
   {
-    for (auto &curLine : sortedColumns[i])
+    prevVPOS = 0;
+    curVPOS = 0;
+
+    for (int j = 0; j < sortedColumns[i].size(); i++)
     {
+      Textline curLine = sortedColumns[i][j];
+
+      curVPOS = curLine.getVPOS();
+
       if (curLine.isLine("territory", 4))
       {
         cout << "GOT HERE 2" << '\n';
@@ -518,8 +531,6 @@ void Segment::segmentWithColumns()
       
       //HEIGHT CHECK
       differenceHeight = abs(curLine.getHeight() - articleHeight);
-
-      //inHeightRange = differenceHeight / heightThresh;
 
       if (differenceHeight <= heightThresh)
       {
@@ -544,12 +555,14 @@ void Segment::segmentWithColumns()
 
       if (finalValue > 0.6)
       {
-        curLine.setLabel(true);
+        sortedColumns[i][j].setLabel(true);
       }
       else
       {
-        curLine.setLabel(false);
+        sortedColumns[i][j].setLabel(false);
       }
+
+      prevVPOS = curVPOS;
     }
   }
 }
@@ -1281,19 +1294,18 @@ void Segment::writeJSON(char* filename)
       obj.AddMember("x", convertToImage_X(curLine.getHPOS()), allocator);
       obj.AddMember("y", convertToImage_Y(curLine.getVPOS()), allocator);
 
-      /*
+       
       content = regions[i].getContent();
       
       val.SetString(content.c_str(),
           static_cast<rapidjson::SizeType>(content.length()), allocator);
 
       obj.AddMember("content", val, allocator);
-      */
+      
 
       annotations.PushBack(obj, allocator);
     }
   }
-
 
   /*
   for (int i = 0; i < regions.size(); i++)

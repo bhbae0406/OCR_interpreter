@@ -62,6 +62,8 @@ class Textline
 
       void setMultiCol();
 
+      void setConfidence(double val);
+
       /* For each word in line, calculates (Area of Word) / (Num Characters in Word).
        * Sorts these ratios and returns the median ratio
        */
@@ -119,6 +121,9 @@ class Textline
       bool hasHyphen;
 
       bool multiColumn;
+
+
+      double confidence;
 
 
       //THRESHOLD CONSTANTS
