@@ -326,10 +326,20 @@ bool Textline::isLine(string key, int wordCount)
       found = true;
   }
 
-  if (found && (this->numWords == wordCount))
-    return true;
+  if (wordCount >= 0)
+  {
+    if (found && (this->numWords == wordCount))
+      return true;
+    else
+      return false;
+  }
   else
-    return false;
+  {
+    if (found)
+      return true;
+    else
+      return false;
+  }
 }
 
 void Textline::printLine()

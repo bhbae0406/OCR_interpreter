@@ -23,10 +23,12 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/prettywriter.h"
+#include "CImg.h"
 
 using namespace std;
 using namespace cv;
 using namespace rapidxml;
+using namespace cimg_library;
 
 double Segment::convertToXML_h(double in)
 {
@@ -73,10 +75,6 @@ void Segment::splitByColumn()
   bool debug = false;
   for (auto curLine : this->lines) 
   {
-    if (curLine.isLine("territory", 4))
-    {
-      cout << "GOT HERE 1" << '\n';
-    }
     //this line is a temporary fix for removing the header of the newspaper
     //NOTE - this only works for 0033.xml
     
@@ -104,16 +102,20 @@ void Segment::splitByColumn()
             && ((curLine.getHPOS() + curLine.getWidth()) > mid.first)) 
         {
           //when the line is classified as being part of more than one column 
+          
           if (debug == true) 
           {
+            /*
             cout << "error!! " << endl;
             cout << "current column median: " << mid.first << endl;
             cout << "current block x: " << curLine.getHPOS() << endl;
             cout << "current block width: " << curLine.getWidth() << endl;
             cout << "columns should be of width: " << column_len << endl;
+            */
 
             continue;
           }
+         
 
           this->columns[column_dict[mid.first]].push_back(curLine);
           debug = true;
@@ -200,6 +202,7 @@ void Segment::splitByColumn()
           && ((curLine.getHPOS() + curLine.getWidth()) <= 
             (rangeMax[column_dict[mid.first]] * rangeSlackHigher))) 
       {
+        /*
         if (curLine.isLine("nati.", 1))
         {
           cout << "GOT HERE - nati, passed small width test" << '\n';
@@ -211,10 +214,13 @@ void Segment::splitByColumn()
         {
           cout << "GOT HERE - passed small width test" << '\n';
         }
+        */
 
         //when the line is classified as being part of more than one column 
+        
         if (debug == true) 
         {
+          /*
           cout << "error!! " << endl;
           cout << "current column median: " << mid.first << endl;
           cout << "current block x: " << curLine.getHPOS() << endl;
@@ -222,9 +228,11 @@ void Segment::splitByColumn()
           cout << "current range Min: " << rangeMin[column_dict[mid.first]] << endl;
           cout << "current range Max: " << rangeMax[column_dict[mid.first]] << endl;
           cout << "columns should be of width: " << column_len << endl;
+          */
 
           continue;
         }
+        
 
         this->columns[column_dict[mid.first]].push_back(curLine);
         debug = true;
@@ -235,26 +243,21 @@ void Segment::splitByColumn()
   //now place multi-line columns inside the column vector
   //repeat them for every column the line spans
 
-  double minThreshold = 0.9;
-  double maxThreshold = 1.4; 
+  double minThreshold = 0.96;
+  double maxThreshold = 1.09; 
 
   for (int i = 0; i < this->columns.size(); i++)
   {
     for (auto curLine: this->nonSingleLines)
     {
-      if (curLine.isLine("territory" , 4))
+      if (curLine.isLine("ENQUIRER,", -1))
       {
-        cout << "GOT HERE - nonSingleLineTest" << '\n';
+        cout << "GOT HERE - Enquirer" << '\n';
       }
 
       if ( (rangeMin[i] < ((curLine.getHPOS() + curLine.getWidth()) * minThreshold))
           && (rangeMax[i] > (curLine.getHPOS() * maxThreshold)))
       {
-        if (curLine.isLine("territory", 4))
-        {
-          cout << "GOT HERE - passed nonSingleLineTest" << '\n';
-        }
-
         this->columns[i].push_back(curLine);
       }
     }
@@ -324,7 +327,7 @@ void Segment::setDim(char* dimXcoord, char* dimYcoord)
   this->dimY = stoi(dimYString);
 }
 
-Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
+Segment::Segment(char* filename, const char* jpgFile)
 {
   bool skipLine = false;
 
@@ -352,7 +355,17 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
   this->Xdimension = 9500;
   this->Ydimension = 9600;
 
-  setDim(dimX, dimY);
+  /* Needs to be fixed TODO
+  CImg<unsigned char> image(jpgFile);
+  this->dimX = image.width;
+  this->dimY = image.height;
+  */
+
+  //Temporary assignment for the program to work
+  this->dimX = 40;
+  this->dimY = 50;
+
+  //setDim(dimX, dimY);
 
   //vector<Block> invalidZones = this->generate_invalid_zones(json_file);
   
@@ -471,11 +484,18 @@ Segment::Segment(char* filename, char* jsonFile, char* dimX, char* dimY)
 
   //segment();
 
+  cout << "GOT 1" << '\n';
   splitByColumn();
+
+  cout << "GOT 2" << '\n';
   //segment();
   segmentWithColumns();
 
+  cout << "GOT 3" << '\n';
+
   groupIntoBlocks();
+  
+  cout << "GOT 4" << '\n';
 }
 
 void Segment::segmentWithColumns()
@@ -518,7 +538,7 @@ void Segment::segmentWithColumns()
     prevVPOS = 0;
     curVPOS = 0;
 
-    for (int j = 0; j < sortedColumns[i].size(); i++)
+    for (int j = 0; j < sortedColumns[i].size(); j++)
     {
       Textline curLine = sortedColumns[i][j];
 
@@ -683,10 +703,17 @@ void Segment::groupIntoBlocks()
   double startY = 0.0;
 
   double curX = 0.0;
+  double prevX = 0.0;
+
   double curRightX = 0.0;
+  double prevRightX = 0.0;
+
   double curTopY = 0.0;
+  double prevTopY = 0.0;
+
   double curBottomY = 0.0;
   double prevBottomY = 0.0;
+
   bool curLabel = false;
   bool prevLabel = false;
 
@@ -697,13 +724,18 @@ void Segment::groupIntoBlocks()
 
   vector<Textline::Word> wordsInLine;
 
+  double minGapLeft = 1300.0;
+  double minGapRight = 1300.0;
+
+  double minGapTop = 500.0;
+
   for (int i = 0; i < sortedColumns.size(); i++)
   {
     for (int j = 0; j < sortedColumns[i].size(); j++)
     {
       Textline curLine = sortedColumns[i][j];
 
-      if (curLine.isLine("territory", 4))
+      if (curLine.isLine("SUBSIDIES", -1))
       {
         cout << "GOT HERE 3" << '\n';
       }
@@ -717,10 +749,10 @@ void Segment::groupIntoBlocks()
         curLine.setVisited();
       }
 
-      curX = convertToImage_X(curLine.getHPOS());
-      curTopY = convertToImage_Y(curLine.getVPOS());
-      curBottomY = convertToImage_Y(curLine.getVPOS() + curLine.getHeight());
-      curRightX = convertToImage_X(curLine.getHPOS() + curLine.getWidth());
+      curX = curLine.getHPOS();
+      curTopY = curLine.getVPOS();
+      curBottomY = curLine.getVPOS() + curLine.getHeight();
+      curRightX = curLine.getHPOS() + curLine.getWidth();
       /*
          curX = (curLine.getHPOS());
          curTopY = (curLine.getVPOS());
@@ -730,7 +762,7 @@ void Segment::groupIntoBlocks()
 
       curLabel = curLine.getLabel();
 
-      if ((i == 0) && (j == 0))
+      if (j == 0)
       {
         if (curLine.isMulti())
         {
@@ -749,10 +781,17 @@ void Segment::groupIntoBlocks()
         }
       }
 
+      
       else
       {
-        if ((curLabel != prevLabel) || 
-            (startMultiBlock && (!curLine.isMulti())))
+        if (
+            (curLabel != prevLabel) || 
+            (startMultiBlock && (!curLine.isMulti())) ||
+            ((abs(curX - prevX) > minGapLeft) && 
+            (abs(curRightX - prevRightX) > minGapRight)) ||
+            (abs(curTopY - prevBottomY) > minGapTop) ||
+            (j == (sortedColumns[i].size() - 1))
+            )
         { 
           startMultiBlock = false;
 
@@ -764,10 +803,10 @@ void Segment::groupIntoBlocks()
 
           /* End block, if not the very first block */
           Block tempBlock(
-              leftMostX, //x
-              startY, //y
-              (prevBottomY - startY), //height
-              (rightMostX - leftMostX) //width
+              convertToImage_X(leftMostX), //x
+              convertToImage_Y(startY), //y
+              convertToImage_Y((prevBottomY - startY)), //height
+              convertToImage_X((rightMostX - leftMostX)) //width
               );
 
           tempBlock.setLabel(prevLabel);
@@ -833,9 +872,11 @@ void Segment::groupIntoBlocks()
         }
       }
 
-      prevLabel = curLabel;
+      prevX = curX;
+      prevRightX = curRightX;
+      prevTopY = curTopY;
       prevBottomY = curBottomY;
-
+      prevLabel = curLabel;
     }
   }
 
@@ -1132,9 +1173,9 @@ void Segment::drawLines(bool orig)
 
   //DEBUGGING
 
-  for (int i = 0; i < sortedColumns.size(); i++)
-  {
-  //int i = 3;
+  //for (int i = 0; i < sortedColumns.size(); i++)
+  //{
+  int i = 2;
     for (int j = 0; j < sortedColumns[i].size(); j++)
     {
      
@@ -1166,8 +1207,7 @@ void Segment::drawLines(bool orig)
         rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
       }
     }
-  }
-  
+ //}
 
 }
 
@@ -1237,7 +1277,7 @@ void Segment::writeImage(char* filename)
   imwrite("segImage_" + fileName + ".jpg", img, compression_params);
 }
 
-void Segment::writeJSON(char* filename)
+void Segment::writeJSON(char* filename, char* outDir)
 {
   string fileName(filename);
 
@@ -1369,8 +1409,11 @@ void Segment::writeJSON(char* filename)
   rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
   d.Accept(writer);
 
+  string outDirName(outDir);
+
   std::ofstream outFile;
-  outFile.open(fileName + "_xml.json");
+
+  outFile.open(outDirName + fileName + "_xml.json");
 
   outFile << buffer.GetString() << std::endl;
 

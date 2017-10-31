@@ -29,7 +29,7 @@ class Segment
      * 1) Construct all Textline objects and place in vector "lines"
      * 2) Initialize the page attributes, pageWidth and pageHeight
      */
-    Segment(char* filename, char* jsonFile, char* dimX, char* dimY);
+    Segment(char* filename, const char* jpgFile);
 
     /* The following four functions are used to normalize the height, width,
      * VPOS, and HPOS. This is necessary because different newspapers have
@@ -72,7 +72,7 @@ class Segment
     void drawLines(bool orig);
     void drawWords(bool orig);
     void writeImage(char* filename);
-    void writeJSON(char* filename);
+    void writeJSON(char* filename, char* outDir);
 
   private:
     vector<Textline> lines;

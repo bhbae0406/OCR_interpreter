@@ -84,13 +84,14 @@ class Textline
 
       /* DEBUGGING TOOL
        * Determines if this line contains the word and is of numWords in length
+       * 
+       * Note -- if wordCount < 0, then isLine does not consider wordCount
        */
       bool isLine(string word, int wordCount);
 
       void printLine();
 
       bool continuedTag();
-
 
       Textline& operator=(Textline const &rhs);
       bool operator==(const Textline& rhs);
