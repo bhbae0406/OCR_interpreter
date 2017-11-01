@@ -110,9 +110,9 @@ class Textline
 
       vector<Word>& getWords();
    
-   private:
       vector<Word> words;
 
+   private:
       //attributes of line
       int hPos;
       int vPos;

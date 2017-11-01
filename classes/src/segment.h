@@ -29,7 +29,7 @@ class Segment
      * 1) Construct all Textline objects and place in vector "lines"
      * 2) Initialize the page attributes, pageWidth and pageHeight
      */
-    Segment(char* filename, const char* jpgFile);
+    Segment(char* filename, char* dimX, char* dimY);
 
     /* The following four functions are used to normalize the height, width,
      * VPOS, and HPOS. This is necessary because different newspapers have
@@ -76,7 +76,7 @@ class Segment
 
   private:
     vector<Textline> lines;
-    vector<Textline> origLines;
+    ector<Textline> origLines;
     vector<vector<Textline>> columns;
     vector<vector<Textline>> sortedColumns;
     vector<Textline> nonSingleLines;
@@ -107,6 +107,19 @@ class Segment
     double distThresh;
     int prevThresh;
     int nextThresh;
+    
+    //ALL PARAMETERS - taken from parameter.json
+    double slackupperW;
+    double slacklowerW;
+    double rangeSlackLowerW;
+    double rangeSlackHigherW;
+    double minThresholdW;
+    double maxThresholdW;
+    double weightHeight;
+    double weightCapitalWords;
+    double weightCapitalLetters;
+    double weightCharArea;
+
 };
 
 // Comparators

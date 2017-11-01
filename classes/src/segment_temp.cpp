@@ -23,12 +23,10 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/prettywriter.h"
-#include "CImg.h"
 
 using namespace std;
 using namespace cv;
 using namespace rapidxml;
-using namespace cimg_library;
 
 double Segment::convertToXML_h(double in)
 {
@@ -64,8 +62,16 @@ void Segment::splitByColumn()
 
   int num_columns = 0;
   int count_notACol = 0;
-  double slackupper = 1.2;
-  double slacklower = 0.8;
+
+  //PARAMETERS 
+  
+  //best slackupperW = 0.4
+  //best slacklowerW = 0.6
+  double slackupper = 1.0 + (slackupperW * 0.5); 
+  //min is 1.0, max is 1.5 -- best is 1.2
+  
+  double slacklower = 0.5 + (slacklowerW * 0.5); 
+  //max is 1.0, min is 0.5 -- best is 0.8
 
   columnLengthComparator comp;
   std::sort(this->lines.begin(), this->lines.end(), comp);
@@ -90,6 +96,7 @@ void Segment::splitByColumn()
 
     // is a valid column - determined by width of line (with slack)
     //  This mitigates the effect of OCR errors
+
     if ((curLine.getWidth() < column_len*slackupper)
         && (curLine.getWidth() > column_len*slacklower)) 
     {
@@ -97,6 +104,8 @@ void Segment::splitByColumn()
       debug = false;
       for (auto mid : column_dict) 
       {
+        //cout << this->columns[column_dict[mid.first]][0].words[0].content << '\n';
+
         // searching for column in the dictionary...
         if((curLine.getHPOS() < mid.first) 
             && ((curLine.getHPOS() + curLine.getWidth()) > mid.first)) 
@@ -156,20 +165,10 @@ void Segment::splitByColumn()
       {
         curLine.setMultiCol();
 
-        if (curLine.isLine("territory", 4))
-        {
-          cout << "GOT HERE - nonSingle" << '\n';
-        }
-
         this->nonSingleLines.push_back(curLine);
       }
       else
       {
-        if (curLine.isLine("territory", 4))
-        {
-          cout << "GOT HERE - smallWidth" << '\n';
-        }
-
         this->smallWidthLines.push_back(curLine);
       }
     }
@@ -182,18 +181,17 @@ void Segment::splitByColumn()
    *    still in the column.
    */
 
-  double rangeSlackLower = 0.99;
-  double rangeSlackHigher = 1.00;
+  //PARAMETERS
+  
+  //best rangeSlackLowerW = 0.95
+  //best rangeSlackHigherW = 0.0
+  double rangeSlackLower = 0.8 + (rangeSlackLowerW * 0.2); 
+  //max is 1.0, min is 0.8 -- best is 0.99
+  double rangeSlackHigher = 1.0 + (rangeSlackHigherW * 0.4); 
+  //min is 1.0, max is 1.4 -- best is 1.00
 
   for (auto curLine : this->smallWidthLines) 
   {
-    if (curLine.isLine("territory", 4))
-    {
-      cout << "GOT HERE - judging small width" << '\n';
-      cout << "HPOS = " << curLine.getHPOS() << '\n';
-      cout << "HPOS + WIDTH = " << curLine.getHPOS() + curLine.getWidth() << '\n';
-    }
-
     debug = false;
     for (auto mid : column_dict) 
     {
@@ -243,18 +241,19 @@ void Segment::splitByColumn()
   //now place multi-line columns inside the column vector
   //repeat them for every column the line spans
 
-  double minThreshold = 0.96;
-  double maxThreshold = 1.09; 
+  //PARAMETERS 
+  
+  //best minThresholdW = 0.6
+  //best maxThresholdW = 0.0
+  double minThreshold = 0.9 + (minThresholdW * 0.1); 
+  //min 0.9, max 1.0 -- best is 0.96
+  double maxThreshold = 1.0 + (maxThresholdW * 0.4);
+  //min 1.0, max 1.4 -- best is 1.09
 
   for (int i = 0; i < this->columns.size(); i++)
   {
     for (auto curLine: this->nonSingleLines)
     {
-      if (curLine.isLine("ENQUIRER,", -1))
-      {
-        cout << "GOT HERE - Enquirer" << '\n';
-      }
-
       if ( (rangeMin[i] < ((curLine.getHPOS() + curLine.getWidth()) * minThreshold))
           && (rangeMax[i] > (curLine.getHPOS() * maxThreshold)))
       {
@@ -327,7 +326,7 @@ void Segment::setDim(char* dimXcoord, char* dimYcoord)
   this->dimY = stoi(dimYString);
 }
 
-Segment::Segment(char* filename, const char* jpgFile)
+Segment::Segment(char* filename, char* dimX, char* dimY) 
 {
   bool skipLine = false;
 
@@ -355,17 +354,7 @@ Segment::Segment(char* filename, const char* jpgFile)
   this->Xdimension = 9500;
   this->Ydimension = 9600;
 
-  /* Needs to be fixed TODO
-  CImg<unsigned char> image(jpgFile);
-  this->dimX = image.width;
-  this->dimY = image.height;
-  */
-
-  //Temporary assignment for the program to work
-  this->dimX = 40;
-  this->dimY = 50;
-
-  //setDim(dimX, dimY);
+  setDim(dimX, dimY);
 
   //vector<Block> invalidZones = this->generate_invalid_zones(json_file);
   
@@ -412,12 +401,6 @@ Segment::Segment(char* filename, const char* jpgFile)
 
         content = word->first_attribute("CONTENT")->value();
         
-        if (!strcmp(word->first_attribute("CONTENT")->value(),"nati."))
-        {
-          cout << "GOT HERE" << '\n';
-          a += 2;
-        }
-
         wordCurVPOS = atoi(word->first_attribute("VPOS")->value());
         wordCurHeight = atoi(word->first_attribute("HEIGHT")->value());
         wordCurWidth = atoi(word->first_attribute("WIDTH")->value());
@@ -484,18 +467,12 @@ Segment::Segment(char* filename, const char* jpgFile)
 
   //segment();
 
-  cout << "GOT 1" << '\n';
   splitByColumn();
 
-  cout << "GOT 2" << '\n';
   //segment();
   segmentWithColumns();
 
-  cout << "GOT 3" << '\n';
-
   groupIntoBlocks();
-  
-  cout << "GOT 4" << '\n';
 }
 
 void Segment::segmentWithColumns()
@@ -544,11 +521,6 @@ void Segment::segmentWithColumns()
 
       curVPOS = curLine.getVPOS();
 
-      if (curLine.isLine("territory", 4))
-      {
-        cout << "GOT HERE 2" << '\n';
-      }
-      
       //HEIGHT CHECK
       differenceHeight = abs(curLine.getHeight() - articleHeight);
 
@@ -568,6 +540,7 @@ void Segment::segmentWithColumns()
       //RATIO OF NUMBER OF CHARACTERS TO AREA
       ratioCharArea = curLine.charAreaRatio();
 
+      //PARAMETERS - inside finalValue formula
       finalValue = (weightHeight * inHeightRange) +
                    (weightCapitalWords * ratioCapitalWords) +
                    (weightCapitalLetters * ratioCapitalLetters) +
@@ -729,17 +702,14 @@ void Segment::groupIntoBlocks()
 
   double minGapTop = 500.0;
 
+  double gapTopHoriz = 100.0;
+
   for (int i = 0; i < sortedColumns.size(); i++)
   {
     for (int j = 0; j < sortedColumns[i].size(); j++)
     {
       Textline curLine = sortedColumns[i][j];
-
-      if (curLine.isLine("SUBSIDIES", -1))
-      {
-        cout << "GOT HERE 3" << '\n';
-      }
-
+      
       if (curLine.isVisited())
       {
         continue;
@@ -787,7 +757,8 @@ void Segment::groupIntoBlocks()
         if (
             (curLabel != prevLabel) || 
             (startMultiBlock && (!curLine.isMulti())) ||
-            ((abs(curX - prevX) > minGapLeft) && 
+            ((abs(curTopY - prevBottomY) > gapTopHoriz) &&
+            (abs(curX - prevX) > minGapLeft) && 
             (abs(curRightX - prevRightX) > minGapRight)) ||
             (abs(curTopY - prevBottomY) > minGapTop) ||
             (j == (sortedColumns[i].size() - 1))
@@ -1178,12 +1149,6 @@ void Segment::drawLines(bool orig)
   int i = 2;
     for (int j = 0; j < sortedColumns[i].size(); j++)
     {
-     
-      if (sortedColumns[i][j].isLine("nati.", 1))
-      {
-        cout << "GOT HERE 3" << '\n';
-      }
-     
 
       rHpos = sortedColumns[i][j].getHPOS();
       rVpos = sortedColumns[i][j].getVPOS();
@@ -1298,6 +1263,7 @@ void Segment::writeJSON(char* filename, char* outDir)
 
   //test using each line as its own block
   
+  /*
   int count = 0;
 
   for (int i = 0; i < sortedColumns.size(); i++)
@@ -1346,8 +1312,8 @@ void Segment::writeJSON(char* filename, char* outDir)
       annotations.PushBack(obj, allocator);
     }
   }
+  */
 
-  /*
   for (int i = 0; i < regions.size(); i++)
   {
     rapidjson::Value obj(rapidjson::kObjectType);
@@ -1386,7 +1352,6 @@ void Segment::writeJSON(char* filename, char* outDir)
 
     annotations.PushBack(obj, allocator);
   }
-  */
 
   rapidjson::Value val(rapidjson::kObjectType);
 
