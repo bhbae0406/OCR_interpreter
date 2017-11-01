@@ -21,6 +21,8 @@ class Segment
     double convertToImage_X(double inX);
     double convertToImage_Y(double inY);
 
+    void readParam(const string& param_json);
+
     vector<Block> generate_invalid_zones(const string& json_file);
     void splitByColumn();
     void setDim(char* dimXcoord, char* dimYcoord);
@@ -29,7 +31,7 @@ class Segment
      * 1) Construct all Textline objects and place in vector "lines"
      * 2) Initialize the page attributes, pageWidth and pageHeight
      */
-    Segment(char* filename, char* dimX, char* dimY);
+    Segment(char* filename, char* dimX, char* dimY, char* param_json);
 
     /* The following four functions are used to normalize the height, width,
      * VPOS, and HPOS. This is necessary because different newspapers have
@@ -72,11 +74,12 @@ class Segment
     void drawLines(bool orig);
     void drawWords(bool orig);
     void writeImage(char* filename);
+      
     void writeJSON(char* filename, char* outDir);
 
   private:
     vector<Textline> lines;
-    ector<Textline> origLines;
+    vector<Textline> origLines;
     vector<vector<Textline>> columns;
     vector<vector<Textline>> sortedColumns;
     vector<Textline> nonSingleLines;

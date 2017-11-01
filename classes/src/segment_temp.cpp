@@ -244,7 +244,7 @@ void Segment::splitByColumn()
   //PARAMETERS 
   
   //best minThresholdW = 0.6
-  //best maxThresholdW = 0.0
+  //best maxThresholdW = 0.225
   double minThreshold = 0.9 + (minThresholdW * 0.1); 
   //min 0.9, max 1.0 -- best is 0.96
   double maxThreshold = 1.0 + (maxThresholdW * 0.4);
@@ -284,6 +284,41 @@ void Segment::splitByColumn()
         [](Textline a, Textline b){ return(a.getVPOS() < b.getVPOS());});
   }
 
+}
+
+void Segment::readParam(const string& param_json)
+{
+  std::stringstream ss;
+  std::ifstream file(param_json);
+  bool notfound = false;
+  vector<Block> invalid_zones;
+  if (file) {
+    ss << file.rdbuf(); 
+    file.close();
+  } else {
+    std::cerr << "Parameter JSON not found!" << std::endl;
+    exit(1);
+  }
+
+  const std::string tmp = ss.str();
+  const char* json = tmp.c_str();
+  rapidjson::Document d;
+  d.Parse(json);
+
+  const rapidjson::Value& xmlParam = d["xml"];
+
+  slackupperW = static_cast<double>(xmlParam["slackupperW"].GetDouble());
+  slacklowerW = static_cast<double>(xmlParam["slacklowerW"].GetDouble());
+  rangeSlackLowerW = static_cast<double>(xmlParam["rangeSlackLowerW"].GetDouble());
+  rangeSlackHigherW = static_cast<double>(xmlParam["rangeSlackHigherW"].GetDouble());
+  minThresholdW = static_cast<double>(xmlParam["minThresholdW"].GetDouble());
+  maxThresholdW = static_cast<double>(xmlParam["maxThresholdW"].GetDouble());
+  weightHeight = static_cast<double>(xmlParam["weightHeight"].GetDouble());
+  weightCapitalWords = static_cast<double>(
+                          xmlParam["weightCapitalWords"].GetDouble());
+  weightCapitalLetters = static_cast<double>(
+                          xmlParam["weightCapitalLetters"].GetDouble());
+  weightCharArea = static_cast<double>(xmlParam["weightCharArea"].GetDouble());
 }
 
 vector<Block> Segment::generate_invalid_zones(const string& json_file)
@@ -326,7 +361,7 @@ void Segment::setDim(char* dimXcoord, char* dimYcoord)
   this->dimY = stoi(dimYString);
 }
 
-Segment::Segment(char* filename, char* dimX, char* dimY) 
+Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json) 
 {
   bool skipLine = false;
 
@@ -338,6 +373,10 @@ Segment::Segment(char* filename, char* dimX, char* dimY)
   distThresh = (1611 / (double)10); 
   prevThresh = 108;
   nextThresh = 63;
+  
+  string paramJson(param_json);
+
+  readParam(paramJson);
 
   rapidxml::file<> xmlFile(filename);
   rapidxml::xml_document<> doc;
@@ -465,11 +504,8 @@ Segment::Segment(char* filename, char* dimX, char* dimY)
 
   //drawOriginal(filename, invalidZones);
 
-  //segment();
-
   splitByColumn();
 
-  //segment();
   segmentWithColumns();
 
   groupIntoBlocks();

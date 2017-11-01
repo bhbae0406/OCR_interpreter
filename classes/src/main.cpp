@@ -5,14 +5,14 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-   if (argc != 5)    
+   if (argc != 6)    
    {
-      cerr << "4 arguments needed: [xml_file.xml] [dimX] [dimY]"<<
-        " [output directory]" << '\n';
+      cerr << " 5 arguments needed: [xml_file.xml] [dimX] [dimY]"<<
+        " [output directory] [param.json]" << '\n';
       exit(1);
    }
   
-   Segment* newSegment = new Segment(argv[1], argv[2], argv[3]);
+   Segment* newSegment = new Segment(argv[1], argv[2], argv[3], argv[5]);
 
    newSegment->drawWords(false);
    //newSegment->drawLines(false);
