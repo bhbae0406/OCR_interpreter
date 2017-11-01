@@ -4,12 +4,12 @@
 #include "textLine.h"
 #include "block.h"
 #include <vector>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/core/core.hpp>
+//#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
-using namespace cv;
+//using namespace cv;
 
 class Segment
 {
@@ -63,6 +63,7 @@ class Segment
 
     void printLines();
 
+    /*
     void PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
         const cv::Scalar& color, int fontFace, double fontScale, 
         int thickness, int lineType);
@@ -73,7 +74,9 @@ class Segment
 
     void drawLines(bool orig);
     void drawWords(bool orig);
+    
     void writeImage(char* filename);
+    */
       
     void writeJSON(char* filename, char* outDir);
 
@@ -89,7 +92,7 @@ class Segment
     vector<Block> regions; 
 
     //IMAGE
-    cv::Mat img;
+    //cv::Mat img;
 
     //IMAGE ATTRIBUTE CONSTANTS
     int Xdimension;

@@ -14,10 +14,10 @@ int main(int argc, char* argv[])
   
    Segment* newSegment = new Segment(argv[1], argv[2], argv[3], argv[5]);
 
-   newSegment->drawWords(false);
+   //newSegment->drawWords(false);
    //newSegment->drawLines(false);
-   newSegment->drawBlocks();
-   newSegment->writeImage(argv[1]);
+   //newSegment->drawBlocks();
+   //newSegment->writeImage(argv[1]);
    newSegment->writeJSON(argv[1], argv[4]);
    return 0;
 }

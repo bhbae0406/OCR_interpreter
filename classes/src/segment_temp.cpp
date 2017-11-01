@@ -8,9 +8,9 @@
 #include <vector>
 #include "rapidxml.hpp"
 #include "rapidxml_utils.hpp"
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/core/core.hpp>
+//#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <locale>
 #include <ctype.h>
@@ -25,7 +25,7 @@
 #include "rapidjson/prettywriter.h"
 
 using namespace std;
-using namespace cv;
+//using namespace cv;
 using namespace rapidxml;
 
 double Segment::convertToXML_h(double in)
@@ -499,8 +499,8 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
       }
     }
   }
-  Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
-  img = blank;
+  //Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
+  //img = blank;
 
   //drawOriginal(filename, invalidZones);
 
@@ -597,6 +597,7 @@ void Segment::segmentWithColumns()
 }
 
 //need to further segment this part into functions. But ok for now.
+/*
 void Segment::segment()
 {
   bool prevCat = false;
@@ -612,7 +613,7 @@ void Segment::segment()
   {
     if (((xmlHeight(lines[i]) - heightThresh) > diffThresh) ||
         ((xmlHeight(lines[i]) > heightThresh) && 
-         lines[i].capLine(false)) || lines[i].capLine(true))
+         (lines[i].capLine(false))) || (lines[i].capLine(true)))
     {
       lines[i].setLabel(true);
       firstIf = true;
@@ -702,6 +703,7 @@ void Segment::segment()
     } //end else
   } //end 1st for 
 }
+*/
 
 void Segment::groupIntoBlocks()
 {
@@ -1011,6 +1013,7 @@ void Segment::printLines()
   }
 }
 
+/*
 void Segment::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
     const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, 
     int lineType = 8)
@@ -1058,6 +1061,7 @@ void Segment::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi
   cv::Mat destRoi = img(roi);
   textImg.copyTo(destRoi, textImgMask);
 }
+
 
 void Segment::drawOriginal(char* filename, std::vector<Block>& zones)
 {
@@ -1130,6 +1134,9 @@ void Segment::drawBlocks()
 
   }
 }
+*/
+
+/*
 
 void Segment::drawLines(bool orig)
 {
@@ -1138,6 +1145,8 @@ void Segment::drawLines(bool orig)
   int rVpos;
   int rHeight;
   int rWidth;
+
+*/
 
   /*
   if (orig)
@@ -1178,6 +1187,7 @@ void Segment::drawLines(bool orig)
   }
   */
 
+/*
   //DEBUGGING
 
   //for (int i = 0; i < sortedColumns.size(); i++)
@@ -1219,10 +1229,12 @@ void Segment::drawWords(bool orig)
   int printHeight = 0;
   int printWidth = 0;
   int numOfLines = 0;
+*/
 
   /* orig - refers to the original set of lines BEFORE
    * removing lines that fell into invalid zones 
    */
+/*
   if (orig)
   {
     numOfLines = static_cast<int>(origLines.size());
@@ -1277,6 +1289,7 @@ void Segment::writeImage(char* filename)
 
   imwrite("segImage_" + fileName + ".jpg", img, compression_params);
 }
+*/
 
 void Segment::writeJSON(char* filename, char* outDir)
 {
