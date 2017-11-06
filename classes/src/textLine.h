@@ -53,6 +53,8 @@ class Textline
       bool isMulti();
       bool isVisited();
 
+      bool isConfDone();
+
       //sets label to true or false based on classification
       void setLabel(bool value);
       void setVisited();
@@ -63,6 +65,8 @@ class Textline
       void setMultiCol();
 
       void setConfidence(double val);
+
+      void setConfDone();
 
       /* For each word in line, calculates (Area of Word) / (Num Characters in Word).
        * Sorts these ratios and returns the median ratio
@@ -123,14 +127,11 @@ class Textline
 
       bool multiColumn;
 
-
       double confidence;
-
 
       //THRESHOLD CONSTANTS
       const double ALLCAP = 0.7;
       const double FIRSTCAP = 0.74;
-
 
       /* LABEL FOR LINE
        * If title, title = true
@@ -139,6 +140,8 @@ class Textline
       bool title;
 
       bool visited; //will be used in linking stage
+
+      bool confDone; //"visited" for determining confidence levels
 
       //used for linking and evaluation
       int subID;

@@ -159,6 +159,11 @@ bool Textline::isVisited()
   return this->visited;
 }
 
+bool Textline::isConfDone()
+{
+  return this->confDone;
+}
+
 void Textline::setLabel(bool value)
 {
   this->title = value;
@@ -187,6 +192,11 @@ void Textline::setMultiCol()
 void Textline::setConfidence(double val)
 { 
   this->confidence = val;
+}
+
+void Textline::setConfDone()
+{
+  this->confDone = true;
 }
 
 double Textline::charAreaRatio()

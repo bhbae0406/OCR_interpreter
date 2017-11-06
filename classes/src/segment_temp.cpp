@@ -8,9 +8,9 @@
 #include <vector>
 #include "rapidxml.hpp"
 #include "rapidxml_utils.hpp"
-//#include <opencv2/core/core.hpp>
-//#include <opencv2/highgui/highgui.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <locale>
 #include <ctype.h>
@@ -25,7 +25,7 @@
 #include "rapidjson/prettywriter.h"
 
 using namespace std;
-//using namespace cv;
+using namespace cv;
 using namespace rapidxml;
 
 double Segment::convertToXML_h(double in)
@@ -96,6 +96,11 @@ void Segment::splitByColumn()
 
     // is a valid column - determined by width of line (with slack)
     //  This mitigates the effect of OCR errors
+    
+    if (curLine.isLine("National", 3))
+    {
+      cout << "HERE!" << '\n';
+    }
 
     if ((curLine.getWidth() < column_len*slackupper)
         && (curLine.getWidth() > column_len*slacklower)) 
@@ -499,8 +504,8 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
       }
     }
   }
-  //Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
-  //img = blank;
+  Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
+  img = blank;
 
   //drawOriginal(filename, invalidZones);
 
@@ -891,6 +896,125 @@ void Segment::groupIntoBlocks()
 
 }
 
+int Segment::wordsInWindow(vector<Textline>& window)
+{
+  int countWords = 0;
+
+  for (auto curLine: window)
+  {
+    countWords += static_cast<int>(curLine.words.size());
+  }
+
+  return countWords;
+}
+
+int Segment::heightWindow(vector<Textline>& window)
+{
+  int topVPOS = window[0].getVPOS();
+  int bottomVPOS = window[window.size() - 1].getVPOS() +
+                    window[window.size() - 1].getHeight();
+
+  return (bottomVPOS - topVPOS);
+}
+
+int Segment::numConsecArticleLines(vector<Textline>& window)
+{
+  int numConsec;
+  bool isArticle = false;
+
+  for (size_t i = 0; i < window.size(); i++)
+  {
+    if (i == 0) 
+    {
+      if (window[i].getLabel() == false)
+      {
+        isArticle = true;
+        numConsec += 1;
+      }
+      
+      else
+        isArticle = false;
+    }
+    
+    else
+    {
+      if (isArticle)
+      {
+        if (window[i].getLabel() == false)
+          numConsec += 1;
+        else
+          isArticle = false;
+      }
+      else
+      {
+        if (window[i].getLabel() == false)
+        {
+          isArticle = true;
+          numConsec += 1;
+        }
+      }
+    }
+  }
+}
+
+void Segment::setConfNonVisited(double level, vector<Textline>& window)
+{
+  /* Sets all lines that have not been assigned confidence levels
+   * with confidence levels.
+   */
+
+  for (size_t i = 0; i < window.size(); i++)
+  {
+    if(window[i].isConfDone() == false)
+    {
+      window[i].setConfidence(level);
+      window[i].setConfDone();
+    }
+  }
+}
+    
+void Segment::determineConfidence()
+{
+  vector<Textline> window;
+
+  int numArticleThresh = 4; 
+  int numWordsThresh = 
+
+  for (int i = 0; i < sortedColumns.size(); i++)
+  {
+    //create a window of 5 consecutive lines
+    for (int j = 0; j < sortedColumns[i].size(); j += 5)
+    {
+      window.push_back(sortedColumns[i][j]);
+      if ((j+1) < sortedColumns[i].size())
+      {
+        window.push_back(sortedColumns[i][j+1]);
+      }
+      if ((j+2) < sortedColumns[i].size())
+      {
+        window.push_back(sortedColumns[i][j+2]);
+      }
+      if ((j+3) < sortedColumns[i].size())
+      {
+        window.push_back(sortedColumns[i][j+3]);
+      }
+      if ((j+4) < sortedColumns[i].size())
+      {
+        window.push_back(sortedColumns[i][j+4]);
+      }
+
+
+
+
+
+      
+    }
+      
+
+      
+  }
+}
+
 double Segment::xmlHeight(Textline& line)
 {
   return (Ydimension * (double(line.getHeight()) / pageHeight));
@@ -1013,7 +1137,7 @@ void Segment::printLines()
   }
 }
 
-/*
+
 void Segment::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
     const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, 
     int lineType = 8)
@@ -1134,68 +1258,20 @@ void Segment::drawBlocks()
 
   }
 }
-*/
 
-/*
 
 void Segment::drawLines(bool orig)
 {
-  
   int rHpos;
   int rVpos;
   int rHeight;
   int rWidth;
-
-*/
-
-  /*
-  if (orig)
-  {
-    numOfLines = static_cast<int>(origLines.size());
-  }
-  else
-  {
-    numOfLines = static_cast<int>(lines.size());
-  }
-
-  for (int i = 0; i < numOfLines; i++)
-  {
-    if (orig)
-    {
-      rHpos = origLines[i].getHPOS();
-      rVpos = origLines[i].getVPOS();
-      rHeight = origLines[i].getHeight();
-      rWidth = origLines[i].getWidth();
-    }
-    else
-    {
-      rHpos = lines[i].getHPOS();
-      rVpos = lines[i].getVPOS();
-      rHeight = lines[i].getHeight();
-      rWidth = lines[i].getWidth();
-    }
-
-    Point rP1((int)(Xdimension * (rHpos/(double)pageWidth)), (int)(Ydimension * (rVpos/(double)pageHeight)));
-
-    Point rP2(rP1.x + (int)(Xdimension * (rWidth/(double)pageWidth))
-        , rP1.y + (int)(Ydimension * (rHeight/(double)pageHeight)));
-
-    if (lines[i].getLabel())
-      rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
-    else
-      rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
-  }
-  */
-
-/*
-  //DEBUGGING
 
   //for (int i = 0; i < sortedColumns.size(); i++)
   //{
   int i = 2;
     for (int j = 0; j < sortedColumns[i].size(); j++)
     {
-
       rHpos = sortedColumns[i][j].getHPOS();
       rVpos = sortedColumns[i][j].getVPOS();
       rHeight = sortedColumns[i][j].getHeight();
@@ -1229,12 +1305,11 @@ void Segment::drawWords(bool orig)
   int printHeight = 0;
   int printWidth = 0;
   int numOfLines = 0;
-*/
 
   /* orig - refers to the original set of lines BEFORE
    * removing lines that fell into invalid zones 
    */
-/*
+
   if (orig)
   {
     numOfLines = static_cast<int>(origLines.size());
@@ -1289,7 +1364,6 @@ void Segment::writeImage(char* filename)
 
   imwrite("segImage_" + fileName + ".jpg", img, compression_params);
 }
-*/
 
 void Segment::writeJSON(char* filename, char* outDir)
 {
