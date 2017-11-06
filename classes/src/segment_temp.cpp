@@ -977,8 +977,25 @@ void Segment::determineConfidence()
 {
   vector<Textline> window;
 
+  /* THRESHOLDS */
   int numArticleThresh = 4; 
-  int numWordsThresh = 
+  int numWordsThresh = 20;
+  int heightThresh = 1000;
+
+  /* WEIGHT */
+  double weightConfArticle = 0.9;
+  double weightConfWords = 0.40;
+  double weightConfHeight = 0.75;
+
+  /* VARIABLES USED IN LOOP */
+  int curArticle;
+  int curWords;
+  int curHeight;
+  int diffArticle;
+  int diffWords;
+  int diffHeight;
+
+  double finalConfDecrease = 0.0;
 
   for (int i = 0; i < sortedColumns.size(); i++)
   {
@@ -1002,6 +1019,31 @@ void Segment::determineConfidence()
       {
         window.push_back(sortedColumns[i][j+4]);
       }
+
+      curArticle = numConseArticleLines(window);
+      curWords = wordsInWindow(window);
+      curHeight = heightWindow(window);
+
+      diffArticle = abs(curArticle - numArticleThresh);
+      diffWords = abs(curWords - numWordsThresh);
+      diffHeight = abs(curHeight - heightThresh);
+
+      finalConfDecrease = (weightConfArticle * diffArticle) + 
+                          (weightConfWords * diffWords) + 
+                          (weightConfHeight * diffHeight);
+
+      
+
+
+
+      
+
+      
+      
+      
+
+
+      
 
 
 
