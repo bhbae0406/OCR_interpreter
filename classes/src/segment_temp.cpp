@@ -1092,8 +1092,8 @@ void Segment::determineConfidence()
   //article length must be >= 4 if at least one article line exists
   int numArticleThresh = 4; 
   int numWordsThresh = 8;
-  int heightThresh = 2800;
-  int gapThresh = 300;
+  int heightThresh = 2400;
+  int gapThresh = 340;
 
   /* WEIGHT */
   double weightConfArticle = 0.9;
@@ -1132,7 +1132,7 @@ void Segment::determineConfidence()
   for (int i = 0; i < sortedColumns.size(); i++)
   {
     //create a window of 5 consecutive lines
-    for (int j = 0; j < sortedColumns[i].size(); j += 1) 
+    for (int j = 0; j < sortedColumns[i].size(); j+=1) 
     {
       if (sortedColumns[i][j].isLine("ducers", -1))
       {
@@ -1153,6 +1153,7 @@ void Segment::determineConfidence()
       {
         rows.push_back(j+3);
       }
+      
       /*
       if ((j+4) < sortedColumns[i].size())
       {

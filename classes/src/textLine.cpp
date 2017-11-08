@@ -56,39 +56,42 @@ Textline::Textline(vector<rapidxml::xml_node<>*>& words)
       newWord.subContent = false;
     }
 
-    this->words.push_back(newWord);
-
-    /* Assigning textLine attributes as the follows:
-     * HPOS - least hPos of all the words
-     * VPOS - least vPos of all the words
-     * HEIGHT - minimum height required to fit all words
-     * WIDTH - minimum width required to fit all words
-     *
-     * This prevents lines from being extra long with too much
-     * unneccessary white space. It also allows those lines that
-     * have sub-contents to fit the second half of hypenated words.
-     */
-
-    if (this->numWords == 0)
+    if ((newWord.content.length()) > 1)
     {
-      bestHPOS = newWord.hPos;
-      bestVPOS = newWord.vPos;
-      bestRightHPOS = newWord.hPos + newWord.width;
-      bestBottomVPOS = newWord.vPos + newWord.height;      
-    }
-    else
-    {
-      if (newWord.hPos < bestHPOS)
+      this->words.push_back(newWord);
+
+      /* Assigning textLine attributes as the follows:
+       * HPOS - least hPos of all the words
+       * VPOS - least vPos of all the words
+       * HEIGHT - minimum height required to fit all words
+       * WIDTH - minimum width required to fit all words
+       *
+       * This prevents lines from being extra long with too much
+       * unneccessary white space. It also allows those lines that
+       * have sub-contents to fit the second half of hypenated words.
+       */
+
+      if (this->numWords == 0)
+      {
         bestHPOS = newWord.hPos;
-      if (newWord.vPos < bestVPOS)
         bestVPOS = newWord.vPos;
-      if ((newWord.hPos + newWord.width) > bestRightHPOS)
         bestRightHPOS = newWord.hPos + newWord.width;
-      if ((newWord.vPos + newWord.height) > bestBottomVPOS)
-        bestBottomVPOS = newWord.vPos + newWord.height;
-    }
+        bestBottomVPOS = newWord.vPos + newWord.height;      
+      }
+      else
+      {
+        if (newWord.hPos < bestHPOS)
+          bestHPOS = newWord.hPos;
+        if (newWord.vPos < bestVPOS)
+          bestVPOS = newWord.vPos;
+        if ((newWord.hPos + newWord.width) > bestRightHPOS)
+          bestRightHPOS = newWord.hPos + newWord.width;
+        if ((newWord.vPos + newWord.height) > bestBottomVPOS)
+          bestBottomVPOS = newWord.vPos + newWord.height;
+      }
 
-    this->numWords += 1;
+      this->numWords += 1;
+    }
   }
 
   this->hPos = bestHPOS;
