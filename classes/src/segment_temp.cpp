@@ -8,9 +8,9 @@
 #include <vector>
 #include "rapidxml.hpp"
 #include "rapidxml_utils.hpp"
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/core/core.hpp>
+//#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <locale>
 #include <ctype.h>
@@ -25,7 +25,7 @@
 #include "rapidjson/prettywriter.h"
 
 using namespace std;
-using namespace cv;
+//using namespace cv;
 using namespace rapidxml;
 
 double Segment::convertToXML_h(double in)
@@ -97,11 +97,6 @@ void Segment::splitByColumn()
     // is a valid column - determined by width of line (with slack)
     //  This mitigates the effect of OCR errors
     
-    if (curLine.isLine("National", 3))
-    {
-      cout << "HERE!" << '\n';
-    }
-
     if ((curLine.getWidth() < column_len*slackupper)
         && (curLine.getWidth() > column_len*slacklower)) 
     {
@@ -504,8 +499,8 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
       }
     }
   }
-  Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
-  img = blank;
+  //Mat blank (Xdimension, Ydimension, CV_8UC3, Scalar(255,255,255));
+  //img = blank;
 
   //drawOriginal(filename, invalidZones);
 
@@ -1134,10 +1129,12 @@ void Segment::determineConfidence()
     //create a window of 5 consecutive lines
     for (int j = 0; j < sortedColumns[i].size(); j+=1) 
     {
+      /*
       if (sortedColumns[i][j].isLine("ducers", -1))
       {
         cout << "GOT HERE CHARLIE" << '\n';
       }
+      */
 
       rows.push_back(j);
       if ((j+1) < sortedColumns[i].size())
@@ -1342,7 +1339,7 @@ void Segment::printLines()
   }
 }
 
-
+/*
 void Segment::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
     const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, 
     int lineType = 8)
@@ -1509,6 +1506,7 @@ void Segment::drawLines(bool orig)
   }
 }
 
+
 void Segment::drawWords(bool orig)
 {
   int printHPOS = 0;
@@ -1516,10 +1514,6 @@ void Segment::drawWords(bool orig)
   int printHeight = 0;
   int printWidth = 0;
   int numOfLines = 0;
-
-  /* orig - refers to the original set of lines BEFORE
-   * removing lines that fell into invalid zones 
-   */
 
   if (orig)
   {
@@ -1575,6 +1569,7 @@ void Segment::writeImage(char* filename)
 
   imwrite("segImage_" + fileName + ".jpg", img, compression_params);
 }
+*/
 
 void Segment::writeJSON(char* filename, char* outDir)
 {

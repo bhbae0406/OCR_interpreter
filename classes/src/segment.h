@@ -105,7 +105,7 @@ class Segment
     vector<Block> regions; 
 
     //IMAGE
-    cv::Mat img;
+    //cv::Mat img;
 
     //IMAGE ATTRIBUTE CONSTANTS
     int Xdimension;
