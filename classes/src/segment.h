@@ -47,10 +47,12 @@ class Segment
 
     /* FUNCTIONS FOR DETERMINING CONFIDENCE */
 
-    int wordsinWindow(vector<Textline>& window);
-    int heightWindow(vector<Textline>& window);
-    int numConsecArticleLines(vector<Textline>& window);
-    void setConfNonVisited(double level, vector<Textline>& window);
+    int wordsInWindow(int column, vector<int>& rows);
+    int heightWindow(int column, vector<int>& rows);
+    int titleArticleTitle(int column, vector<int>& rows);
+    int maxGapWords(int column, vector<int>& rows);
+    //int numConsecArticleLines(int column, vector<int>& rows);
+    void setConfNonVisited(double level, int column, vector<int>& rows);
 
     void determineConfidence();
 

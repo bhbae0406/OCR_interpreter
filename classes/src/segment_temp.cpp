@@ -513,6 +513,8 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
 
   segmentWithColumns();
 
+  determineConfidence();
+
   groupIntoBlocks();
 }
 
@@ -747,6 +749,9 @@ void Segment::groupIntoBlocks()
 
   double gapTopHoriz = 100.0;
 
+  int totalConfidence = 0;
+  int numLines = 0;
+
   for (int i = 0; i < sortedColumns.size(); i++)
   {
     for (int j = 0; j < sortedColumns[i].size(); j++)
@@ -792,9 +797,14 @@ void Segment::groupIntoBlocks()
         {
           blockContent += wordsInLine[i].content + " ";
         }
+
+        numLines += 1;
+        if (curLine.getConfidence() >= 0.9)
+        {
+          totalConfidence += 1;
+        }
       }
 
-      
       else
       {
         if (
@@ -825,9 +835,18 @@ void Segment::groupIntoBlocks()
 
           tempBlock.setLabel(prevLabel);
 
-          //setting all confidence levels to 0.9 for now
-          //need to implement this later
-          tempBlock.setConfidence(0.9);
+          //setting confidence as average of all confidence in lines
+          if ((double(totalConfidence) / numLines) > 0.5)
+          {
+            tempBlock.setConfidence(1);
+          }
+          else
+          {
+            tempBlock.setConfidence(0);
+          }
+
+          totalConfidence = 0;
+          numLines = 0;
 
           tempBlock.setID(count);
 
@@ -849,6 +868,12 @@ void Segment::groupIntoBlocks()
           for (size_t i = 0; i < wordsInLine.size(); i++)
           {
             blockContent += wordsInLine[i].content + " ";
+          }
+
+          numLines += 1;
+          if (curLine.getConfidence() >= 0.9)
+          {
+            totalConfidence += 1;
           }
 
           count++;
@@ -883,6 +908,12 @@ void Segment::groupIntoBlocks()
             blockContent += wordsInLine[i].content + " ";
           }
 
+          numLines += 1;
+          if (curLine.getConfidence() >= 0.9)
+          {
+            totalConfidence += 1;
+          }
+
         }
       }
 
@@ -896,30 +927,99 @@ void Segment::groupIntoBlocks()
 
 }
 
-int Segment::wordsInWindow(vector<Textline>& window)
+int Segment::wordsInWindow(int column, vector<int>& rows)
 {
   int countWords = 0;
 
-  for (auto curLine: window)
+  for (size_t i = 0; i < rows.size(); i++)
   {
-    countWords += static_cast<int>(curLine.words.size());
+    countWords += static_cast<int>(sortedColumns[column][rows[i]].words.size());
   }
 
   return countWords;
 }
 
-int Segment::heightWindow(vector<Textline>& window)
+int Segment::heightWindow(int column, vector<int>& rows)
 {
-  int topVPOS = window[0].getVPOS();
-  int bottomVPOS = window[window.size() - 1].getVPOS() +
-                    window[window.size() - 1].getHeight();
+  int topVPOS = sortedColumns[column][rows[0]].getVPOS();
+  int bottomVPOS = sortedColumns[column][rows[rows.size()-1]].getVPOS() +
+                    sortedColumns[column][rows[rows.size()-1]].getHeight();
 
   return (bottomVPOS - topVPOS);
 }
 
+int Segment::titleArticleTitle(int column, vector<int>& rows)
+{
+  bool firstTitle = false;
+  bool setFirst = false;
+  bool secondTitle = false;
+
+  for (size_t i = 0; i < rows.size(); i++)
+  {
+    if (!firstTitle && sortedColumns[column][rows[i]].getLabel())
+    {
+      if (((i+1) < rows.size()) &&
+          (sortedColumns[column][rows[i+1]].getLabel() == false))
+      {
+        firstTitle = true;
+        setFirst = true;
+      }
+    }
+
+    if (!setFirst && firstTitle)
+    {
+      if (sortedColumns[column][rows[i]].getLabel())
+      {
+        secondTitle = true;
+        
+        //setConfDone because twoTitle is a very good indicator of an image
+        for (size_t j = 0; j < rows.size(); j++)
+        {
+          sortedColumns[column][rows[j]].setConfDone();
+        }
+
+        return 1;
+      }
+    }
+
+    setFirst = false;
+  }
+
+  return 0;
+}
+
+int Segment::maxGapWords(int column, vector<int>& rows)
+{
+  int maxGap = 0;
+  int pHpos = 0;
+  int aHpos = 0;
+
+  for (size_t i = 0; i < rows.size(); i++)
+  {
+    if (sortedColumns[column][rows[i]].getLabel() == false)
+    {
+      for (size_t j = 0; j < sortedColumns[column][rows[i]].words.size() - 1; j++)
+      {
+        pHpos = sortedColumns[column][rows[i]].words[j].hPos +
+              sortedColumns[column][rows[i]].words[j].width;
+        aHpos = sortedColumns[column][rows[i]].words[j+1].hPos;
+
+        if ((abs(aHpos - pHpos)) > maxGap)
+        {
+          maxGap = abs(aHpos - pHpos);
+        }
+      }
+    }
+  }
+
+  return maxGap;
+}
+
+
+/*
 int Segment::numConsecArticleLines(vector<Textline>& window)
 {
-  int numConsec;
+  int numConsec = 0;
   bool isArticle = false;
 
   for (size_t i = 0; i < window.size(); i++)
@@ -955,105 +1055,167 @@ int Segment::numConsecArticleLines(vector<Textline>& window)
       }
     }
   }
+  
+  return numConsec;
 }
+*/
 
-void Segment::setConfNonVisited(double level, vector<Textline>& window)
+void Segment::setConfNonVisited(double level, int column, vector<int>& rows)
 {
   /* Sets all lines that have not been assigned confidence levels
    * with confidence levels.
    */
 
-  for (size_t i = 0; i < window.size(); i++)
+  for (size_t i = 0; i < rows.size(); i++)
   {
-    if(window[i].isConfDone() == false)
+    if(sortedColumns[column][rows[i]].isConfDone() == false)
     {
-      window[i].setConfidence(level);
-      window[i].setConfDone();
+      sortedColumns[column][rows[i]].setConfidence(level);
+    }
+    
+    else
+    {
+      if (sortedColumns[column][rows[i]].getNumConf() == 0)
+      {
+        sortedColumns[column][rows[i]].setConfidence(level);
+        sortedColumns[column][rows[i]].setNumConf(1); 
+      }
     }
   }
 }
     
 void Segment::determineConfidence()
 {
-  vector<Textline> window;
-
+  vector<int> rows;
   /* THRESHOLDS */
+
+  //article length must be >= 4 if at least one article line exists
   int numArticleThresh = 4; 
-  int numWordsThresh = 20;
-  int heightThresh = 1000;
+  int numWordsThresh = 8;
+  int heightThresh = 2800;
+  int gapThresh = 300;
 
   /* WEIGHT */
   double weightConfArticle = 0.9;
-  double weightConfWords = 0.40;
-  double weightConfHeight = 0.75;
+  double weightConfWords = 0.002;
+  double weightTwoTitle = 0.2;
+  double weightGap = 0.5;
+
+  //difference from threshold - every multiple of 50 equates to
+  //losing 0.5% in confidence
+  double weightConfHeight = 0.3;
 
   /* VARIABLES USED IN LOOP */
-  int curArticle;
-  int curWords;
-  int curHeight;
-  int diffArticle;
-  int diffWords;
-  int diffHeight;
+  int curArticle = 0;
+  int curWords = 0;
+  int curHeight = 0;
+  int curGap = 0;
+  int diffArticle = 0;
+  int diffWords = 0;
+  int diffHeight = 0;
+  int diffGap = 0;
 
+  int twoTitle = 0;
   double finalConfDecrease = 0.0;
 
+  //set all conf done to false
+  for (int i = 0; i < sortedColumns.size(); i++)
+  {
+    for (int j = 0; j < sortedColumns[i].size(); j++)
+    {
+      sortedColumns[i][j].setConfFalse();
+    }
+  }
+
+  //Now determine confidence levels
+  
   for (int i = 0; i < sortedColumns.size(); i++)
   {
     //create a window of 5 consecutive lines
-    for (int j = 0; j < sortedColumns[i].size(); j += 5)
+    for (int j = 0; j < sortedColumns[i].size(); j += 1) 
     {
-      window.push_back(sortedColumns[i][j]);
+      if (sortedColumns[i][j].isLine("ducers", -1))
+      {
+        cout << "GOT HERE CHARLIE" << '\n';
+      }
+
+      rows.push_back(j);
       if ((j+1) < sortedColumns[i].size())
       {
-        window.push_back(sortedColumns[i][j+1]);
+        rows.push_back(j+1);
       }
       if ((j+2) < sortedColumns[i].size())
       {
-        window.push_back(sortedColumns[i][j+2]);
+        rows.push_back(j+2);
       }
+      
       if ((j+3) < sortedColumns[i].size())
       {
-        window.push_back(sortedColumns[i][j+3]);
+        rows.push_back(j+3);
       }
+      /*
       if ((j+4) < sortedColumns[i].size())
       {
-        window.push_back(sortedColumns[i][j+4]);
+        rows.push_back(j+4);
+      }
+      */
+
+      //curArticle = numConsecArticleLines(i, rows);
+      curWords = wordsInWindow(i, rows);
+      curHeight = heightWindow(i, rows);
+      twoTitle = titleArticleTitle(i, rows);
+      curGap = maxGapWords(i, rows);
+
+      /*
+      if ((curArticle > 0) && (curArticle < 4))
+      {
+        diffArticle = numArticleThresh - curArticle;
+      }
+      else
+      {
+        //do not consider article length if no article lines exist
+        //or the number of article lines exceed 4
+        diffArticle = 0;
+      }
+      */
+
+      if (curWords > numWordsThresh)
+      {
+        diffWords = 0;
+      }
+      else
+      {
+        diffWords = abs(curWords - numWordsThresh);
       }
 
-      curArticle = numConseArticleLines(window);
-      curWords = wordsInWindow(window);
-      curHeight = heightWindow(window);
+      if (curHeight < heightThresh)
+      {
+        diffHeight = 0;
+      }
+      else
+      {
+        diffHeight = abs(curHeight - heightThresh);
+      }
 
-      diffArticle = abs(curArticle - numArticleThresh);
-      diffWords = abs(curWords - numWordsThresh);
-      diffHeight = abs(curHeight - heightThresh);
+      if (curGap < gapThresh)
+      {
+        diffGap = 0;
+      }
+      else
+      {
+        diffGap = abs(curGap - gapThresh);
+      }
 
-      finalConfDecrease = (weightConfArticle * diffArticle) + 
+      diffHeight /= 100;
+
+      finalConfDecrease = (weightTwoTitle * twoTitle) + 
                           (weightConfWords * diffWords) + 
-                          (weightConfHeight * diffHeight);
-
-      
-
-
-
-      
-
-      
-      
-      
-
-
-      
-
-
-
-
-
-      
+                          (weightConfHeight * diffHeight) + 
+                          (weightGap * diffGap);
+  
+      setConfNonVisited((1.0 - finalConfDecrease), i, rows);
+      rows.clear();
     }
-      
-
-      
   }
 }
 
@@ -1293,11 +1455,13 @@ void Segment::drawBlocks()
     Point rP2(rP1.x + (int)(Xdimension * (blockWidth/(double)pageWidth))
         , rP1.y + (int)(Ydimension * (blockHeight/(double)pageHeight)));
 
-    if (curBlock.getLabel())
-      rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
-    else
-      rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
-
+    if (curBlock.getConfidence() == 0)
+    {
+      if (curBlock.getLabel())
+        rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+      else
+        rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
+    }    
   }
 }
 
@@ -1309,9 +1473,9 @@ void Segment::drawLines(bool orig)
   int rHeight;
   int rWidth;
 
-  //for (int i = 0; i < sortedColumns.size(); i++)
-  //{
-  int i = 2;
+  for (int i = 0; i < sortedColumns.size(); i++)
+  {
+  //int i = 2;
     for (int j = 0; j < sortedColumns[i].size(); j++)
     {
       rHpos = sortedColumns[i][j].getHPOS();
@@ -1326,18 +1490,22 @@ void Segment::drawLines(bool orig)
 
       //rectangle(img, rP1, rP2, Scalar(blueCount,greenCount,redCount), 7);
 
-      if (sortedColumns[i][j].getLabel())
-      {
-        rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
-      }
+      cout << sortedColumns[i][j].getConfidence() << '\n';
 
-      else
+      if ((sortedColumns[i][j].getConfidence()) < 0.9)
       {
-        rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
+        if (sortedColumns[i][j].getLabel())
+        {
+          rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+        }
+
+        else
+        {
+          rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
+        }
       }
     }
- //}
-
+  }
 }
 
 void Segment::drawWords(bool orig)

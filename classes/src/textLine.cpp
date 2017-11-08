@@ -98,6 +98,9 @@ Textline::Textline(vector<rapidxml::xml_node<>*>& words)
 
   //initialize title to false
   this->title = false;
+
+  this->confDone = false;
+  this->numConf = 0;
 }
 
 bool Textline::valueInRange(double value, double min, double max)
@@ -137,6 +140,16 @@ int Textline::getWidth() const
 int Textline::getHeight() const
 {
   return height;
+}
+
+int Textline::getNumConf() const
+{
+  return this->numConf;
+}
+
+double Textline::getConfidence() const
+{
+  return this->confidence;
 }
 
 bool Textline::getLabel() const
@@ -197,6 +210,16 @@ void Textline::setConfidence(double val)
 void Textline::setConfDone()
 {
   this->confDone = true;
+}
+
+void Textline::setConfFalse()
+{
+  this->confDone = false;
+}
+
+void Textline::setNumConf(int val)
+{
+  this->numConf = val;
 }
 
 double Textline::charAreaRatio()

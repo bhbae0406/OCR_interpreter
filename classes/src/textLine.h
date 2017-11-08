@@ -47,7 +47,10 @@ class Textline
       int getVPOS() const;
       int getWidth() const;
       int getHeight() const;
+      int getNumConf() const;
+      double getConfidence() const;
       bool getLabel() const;
+      
       bool hyphen() const;
 
       bool isMulti();
@@ -67,6 +70,10 @@ class Textline
       void setConfidence(double val);
 
       void setConfDone();
+
+      void setConfFalse();
+
+      void setNumConf(int val);
 
       /* For each word in line, calculates (Area of Word) / (Num Characters in Word).
        * Sorts these ratios and returns the median ratio
@@ -142,6 +149,7 @@ class Textline
       bool visited; //will be used in linking stage
 
       bool confDone; //"visited" for determining confidence levels
+      int numConf;
 
       //used for linking and evaluation
       int subID;
