@@ -50,6 +50,8 @@ class Textline
       int getNumConf() const;
       double getConfidence() const;
       bool getLabel() const;
+      bool getReachedTop() const;
+      bool getAlreadySetConf() const;
       
       bool hyphen() const;
 
@@ -67,13 +69,17 @@ class Textline
 
       void setMultiCol();
 
-      void setConfidence(double val);
+      void setConfidence();
 
       void setConfDone();
 
       void setConfFalse();
 
       void setNumConf(int val);
+
+      void setReachedTop();
+
+      void setAlreadyConf();
 
       /* For each word in line, calculates (Area of Word) / (Num Characters in Word).
        * Sorts these ratios and returns the median ratio
@@ -123,6 +129,8 @@ class Textline
    
       vector<Word> words;
 
+      vector<double> confVal;
+
    private:
       //attributes of line
       int hPos;
@@ -134,7 +142,15 @@ class Textline
 
       bool multiColumn;
 
+      //final confidence value
       double confidence;
+
+      
+      /* True if a line has reached the top of the window
+       * used to determine confidence levels
+       */
+      bool reachedWindowTop;
+      bool alreadySetConf;
 
       //THRESHOLD CONSTANTS
       const double ALLCAP = 0.7;

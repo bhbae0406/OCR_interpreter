@@ -160,6 +160,16 @@ bool Textline::getLabel() const
   return title;
 }
 
+bool Textline::getReachedTop() const
+{
+  return this->reachedWindowTop;
+}
+
+bool Textline::getAlreadySetConf() const
+{
+  return this->alreadySetConf;
+}
+
 bool Textline::hyphen() const
 {
   return hasHyphen;
@@ -173,6 +183,12 @@ bool Textline::isMulti()
 bool Textline::isVisited()
 {
   return this->visited;
+
+  /* Instead of checking for the visited attribute, 
+   * check that the content is not the same. This will help
+   * prevent repeating different Textline objects that are
+   * essentially the same line
+   */
 }
 
 bool Textline::isConfDone()
@@ -205,9 +221,22 @@ void Textline::setMultiCol()
   this->multiColumn = true;
 }
 
-void Textline::setConfidence(double val)
+void Textline::setConfidence()
 { 
-  this->confidence = val;
+  //Try average of all confidence levels
+  int totalNum = static_cast<int>(confVal.size());
+  double sum = 0.0;
+
+  for (double curConf : this->confVal)
+  {
+    sum += curConf;
+  }
+
+  this->confidence = (sum / totalNum);
+  //cout << "TotalNum = " << totalNum << '\n';
+
+  //this->confidence = *max_element(this->confVal.begin(), this->confVal.end());
+  //this->confidence = this->confVal[totalNum-1];
 }
 
 void Textline::setConfDone()
@@ -223,6 +252,16 @@ void Textline::setConfFalse()
 void Textline::setNumConf(int val)
 {
   this->numConf = val;
+}
+
+void Textline::setReachedTop()
+{
+  this->reachedWindowTop = true;
+}
+
+void Textline::setAlreadyConf()
+{
+  this->alreadySetConf = true;
 }
 
 double Textline::charAreaRatio()

@@ -404,8 +404,14 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
   int wordCurHeight = 0;
   int wordPrevWidth = 0;
   int wordCurWidth = 0;
+  int lineWidth = 0;
+
+  double prevArea = 0.0;
+  double curArea = 0.0;
 
   int curNumWords = 0;
+
+  int numWordsLine = 0;
 
   //temp variable
   int a = 0;
@@ -423,6 +429,7 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
     for (rapidxml::xml_node<>* textLine = textBlock->first_node("TextLine");
         textLine != 0; textLine = textLine->next_sibling("TextLine"))
     {
+      numWordsLine = 0;
       curNumWords = 0;
       wordPrevVPOS = 0;
       wordCurVPOS = 0;
@@ -430,8 +437,16 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
       wordCurHeight = 0;
       wordPrevWidth = 0;
       wordCurWidth = 0;
+      
+      lineWidth = atoi(textLine->first_attribute("WIDTH")->value());
 
       words.clear();
+
+      for (rapidxml::xml_node<>* word = textLine->first_node("String");
+          word != 0; word = word->next_sibling("String"))
+      {
+        numWordsLine++;
+      }
 
       for (rapidxml::xml_node<>* word = textLine->first_node("String");
           word != 0; word = word->next_sibling("String"))
@@ -439,6 +454,11 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
         //words.push_back(word);
 
         content = word->first_attribute("CONTENT")->value();
+
+        if (content.compare("minimum-manning") == 0)
+        {
+          cout << "GOT HERE!" << '\n';
+        }
         
         wordCurVPOS = atoi(word->first_attribute("VPOS")->value());
         wordCurHeight = atoi(word->first_attribute("HEIGHT")->value());
@@ -446,14 +466,41 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
 
         words.push_back(word);
 
+        
+        if (((double(lineWidth) / wordCurWidth) < 1.5) &&
+            numWordsLine > 1)
+        {
+          words.pop_back();
+        }
+
+        //prevArea = wordPrevHeight*wordPrevWidth;
+        //curArea = wordCurHeight*wordCurWidth;
+        
+        /*
+        if (prevArea != 0)
+        {
+          if (prevArea > curArea)
+          {
+            if ((double(prevArea) / curArea) > 10)
+            {
+              words.pop_back();
+              words.pop_back(); //remove both words
+              words.push_back(word); //push back current word
+            }
+          }
+          else
+          {
+            if ((double(curArea) / prevArea) > 10)
+            {
+              words.pop_back(); //pop current word
+            }
+          }
+        }
+        */
+        
         if (curNumWords > 0)
         {
-          if (abs(wordCurHeight - wordPrevHeight) > 2000 ||
-              abs(wordCurWidth - wordPrevWidth) > 2000)
-          {
-            words.pop_back(); //skip word
-          }
-
+          //condition to determine if a current line ends
           if (abs(wordCurVPOS - wordPrevVPOS) > 60) 
           {
             wordTemp = words.back();
@@ -511,6 +558,28 @@ Segment::Segment(char* filename, char* dimX, char* dimY, char* param_json)
   determineConfidence();
 
   groupIntoBlocks();
+}
+
+void Segment::removeLargeWords()
+{
+  /* Remove all lines in 'sortedColumns' that contain excessively
+   * large words. These are OCR errors that must be removed.
+   */
+  for (size_t i = 0; i < sortedColumns.size(); i++)
+  {
+    for (size_t j = 0; j < sortedColumns[i].size(); j++)
+    {
+      
+    }
+  }
+}
+
+bool Segment::removeLine(Textline& testLine)
+{
+  for (size_t i = 0; i < testLine.words.size(); i++)
+  {
+        
+  }
 }
 
 void Segment::segmentWithColumns()
@@ -598,115 +667,6 @@ void Segment::segmentWithColumns()
   }
 }
 
-//need to further segment this part into functions. But ok for now.
-/*
-void Segment::segment()
-{
-  bool prevCat = false;
-
-  int numCategory = 0;
-
-  bool firstIf = false;
-
-  double prevDistance = 0.0;
-  double nextDistance = 0.0;
-
-  for (int i = 0; i < numLines; i++)
-  {
-    if (((xmlHeight(lines[i]) - heightThresh) > diffThresh) ||
-        ((xmlHeight(lines[i]) > heightThresh) && 
-         (lines[i].capLine(false))) || (lines[i].capLine(true)))
-    {
-      lines[i].setLabel(true);
-      firstIf = true;
-    }
-
-    else
-    {
-      if (lines[i].capLine(false) && (lines[i].charAreaRatio() > CAThresh))
-      {
-        if (distNextFour(i) > distThresh)
-        {
-          if (lines[i].continuedTag())
-          {
-            lines[i].setLabel(false);
-          }
-          else
-          {
-            lines[i].setLabel(true);
-          }
-        }
-        else
-        {
-          lines[i].setLabel(false);
-        }
-      }
-      else
-      {
-        lines[i].setLabel(false);
-      }
-    }
-
-    if (i == 0)
-    {
-      prevCat = lines[i].getLabel();
-    }
-    else
-    {
-      if (lines[i].getLabel() == prevCat)
-      {
-        numCategory++;
-      }
-      else
-      {
-        numCategory = 0;
-      }
-
-      if ((lines[i].getLabel() != prevCat) 
-          && (lines[i].getLabel()) 
-          && (numCategory > 4) 
-          && (distPrevOne(i) < prevThresh)
-          && (!((((xmlHeight(lines[i]) - heightThresh) > diffThresh)
-                && (lines[i].capLine(false)) ||
-                (lines[i].capLine(true))))))
-      {
-        lines[i].setLabel(false);
-      }
-
-      if ((lines[i].getLabel() != prevCat) 
-          && (prevCat == false)
-          && (!firstIf))
-      {
-        prevDistance = distPrevOne(i);
-        nextDistance = distNextOne(i);
-
-        if ((prevDistance < nextDistance)
-            && (nextDistance > nextThresh)
-            && (prevDistance < prevThresh))
-        {
-          lines[i].setLabel(false);
-        }
-      }
-
-      if ((lines[i].getLabel() != prevCat) && (prevCat == true) && ((i - 1) >= 0))
-      {
-        prevDistance = distPrevOne(i);
-        nextDistance = distNextOne(i);
-
-        if ((prevDistance < nextDistance)
-            && (nextDistance > nextThresh)
-            && (prevDistance < prevThresh)
-            && (abs(lines[i-1].getHPOS() - lines[i].getHPOS()) < 500)
-            && (centeredLine(i, 20, 20) && lines[i].hyphen()))
-        {
-          lines[i].setLabel(true);
-        }
-      }
-    } //end else
-  } //end 1st for 
-}
-*/
-
 void Segment::groupIntoBlocks()
 {
   /* Use the sortedColumns vector to group regions into title/article regions */
@@ -744,7 +704,7 @@ void Segment::groupIntoBlocks()
 
   double gapTopHoriz = 100.0;
 
-  int totalConfidence = 0;
+  double totalConfidence = 0;
   int numLines = 0;
 
   for (int i = 0; i < sortedColumns.size(); i++)
@@ -757,9 +717,11 @@ void Segment::groupIntoBlocks()
       {
         continue;
       }
+
       else
       {
         curLine.setVisited();
+        setAllCopiesVisited(curLine);
       }
 
       curX = curLine.getHPOS();
@@ -794,10 +756,8 @@ void Segment::groupIntoBlocks()
         }
 
         numLines += 1;
-        if (curLine.getConfidence() >= 0.9)
-        {
-          totalConfidence += 1;
-        }
+
+        totalConfidence += curLine.getConfidence();
       }
 
       else
@@ -831,14 +791,7 @@ void Segment::groupIntoBlocks()
           tempBlock.setLabel(prevLabel);
 
           //setting confidence as average of all confidence in lines
-          if ((double(totalConfidence) / numLines) > 0.5)
-          {
-            tempBlock.setConfidence(1);
-          }
-          else
-          {
-            tempBlock.setConfidence(0);
-          }
+          tempBlock.setConfidence(double(totalConfidence) / numLines);
 
           totalConfidence = 0;
           numLines = 0;
@@ -866,10 +819,8 @@ void Segment::groupIntoBlocks()
           }
 
           numLines += 1;
-          if (curLine.getConfidence() >= 0.9)
-          {
-            totalConfidence += 1;
-          }
+
+          totalConfidence += curLine.getConfidence();
 
           count++;
           startY = curTopY;
@@ -904,11 +855,8 @@ void Segment::groupIntoBlocks()
           }
 
           numLines += 1;
-          if (curLine.getConfidence() >= 0.9)
-          {
-            totalConfidence += 1;
-          }
 
+          totalConfidence += curLine.getConfidence();
         }
       }
 
@@ -936,11 +884,30 @@ int Segment::wordsInWindow(int column, vector<int>& rows)
 
 int Segment::heightWindow(int column, vector<int>& rows)
 {
+  /*
   int topVPOS = sortedColumns[column][rows[0]].getVPOS();
   int bottomVPOS = sortedColumns[column][rows[rows.size()-1]].getVPOS() +
                     sortedColumns[column][rows[rows.size()-1]].getHeight();
+  */
 
-  return (bottomVPOS - topVPOS);
+  int topVPOS = 0;
+  int bottomVPOS = 0;
+  int maxDiff = 0;
+
+  for (size_t i = 0; i < (rows.size() - 1); i++)
+  {
+    topVPOS = sortedColumns[column][rows[i]].getVPOS() +
+              sortedColumns[column][rows[i]].getHeight();;
+
+    bottomVPOS = sortedColumns[column][rows[i+1]].getVPOS();
+
+    if ((bottomVPOS - topVPOS) > maxDiff)
+    {
+      maxDiff = bottomVPOS - topVPOS;
+    }
+  }
+
+  return maxDiff;
 }
 
 int Segment::titleArticleTitle(int column, vector<int>& rows)
@@ -1010,50 +977,47 @@ int Segment::maxGapWords(int column, vector<int>& rows)
   return maxGap;
 }
 
-
-/*
-int Segment::numConsecArticleLines(vector<Textline>& window)
+double Segment::commonArticleWordArea()
 {
-  int numConsec = 0;
-  bool isArticle = false;
+  vector<int> areas;
 
-  for (size_t i = 0; i < window.size(); i++)
+  for (size_t i = 0; i < sortedColumns.size(); i++)
   {
-    if (i == 0) 
+    for (size_t j = 0; j < sortedColumns[i].size(); j++)
     {
-      if (window[i].getLabel() == false)
+      if (!(sortedColumns[i][j].getLabel()))
       {
-        isArticle = true;
-        numConsec += 1;
-      }
-      
-      else
-        isArticle = false;
-    }
-    
-    else
-    {
-      if (isArticle)
-      {
-        if (window[i].getLabel() == false)
-          numConsec += 1;
-        else
-          isArticle = false;
-      }
-      else
-      {
-        if (window[i].getLabel() == false)
+        for (size_t k = 0; k < sortedColumns[i][j].words.size(); k++)
         {
-          isArticle = true;
-          numConsec += 1;
+          areas.push_back((sortedColumns[i][j].words[k].width) * 
+                          (sortedColumns[i][j].words[k].height));
         }
       }
     }
   }
-  
-  return numConsec;
+
+  sort(areas.begin(), areas.end());
+
+  return double(areas[(areas.size()) / 2]);
 }
-*/
+
+double Segment::averageWordArea(int column, vector<int>& rows)
+{
+  int totalWords = 0;
+  int sum = 0;
+
+  for (size_t i = 0; i < rows.size(); i++)
+  {
+    for (size_t j = 0; j < sortedColumns[column][rows[i]].words.size(); j++)
+    {
+      sum += ((sortedColumns[column][rows[i]].words[j].width) *
+                    (sortedColumns[column][rows[i]].words[j].height));
+      totalWords += 1;
+    }
+  }
+
+  return (double(sum) / totalWords);
+}
 
 void Segment::setConfNonVisited(double level, int column, vector<int>& rows)
 {
@@ -1061,8 +1025,22 @@ void Segment::setConfNonVisited(double level, int column, vector<int>& rows)
    * with confidence levels.
    */
 
+  //transformLevel - level is forced to be within 0 and 1
+  double transformLevel = 0;
+
+  if (level < -3)
+  {
+    transformLevel = 0;
+  }
+  else
+  {
+    //(abs(level - (-3)) / 4) + 0
+    transformLevel = double(abs(level + 3.0) / 4.0) + 0.0;
+  }
+
   for (size_t i = 0; i < rows.size(); i++)
   {
+    /*
     if(sortedColumns[column][rows[i]].isConfDone() == false)
     {
       sortedColumns[column][rows[i]].setConfidence(level);
@@ -1070,10 +1048,26 @@ void Segment::setConfNonVisited(double level, int column, vector<int>& rows)
     
     else
     {
+      //if isConfDone = true, we want to set confidence only once
       if (sortedColumns[column][rows[i]].getNumConf() == 0)
       {
         sortedColumns[column][rows[i]].setConfidence(level);
         sortedColumns[column][rows[i]].setNumConf(1); 
+      }
+    }
+    */
+
+    if (!(sortedColumns[column][rows[i]].getReachedTop()))
+    {
+      sortedColumns[column][rows[i]].confVal.push_back(transformLevel);
+    }
+    else
+    {
+      if (!(sortedColumns[column][rows[i]].getAlreadySetConf()))
+      {
+        sortedColumns[column][rows[i]].confVal.push_back(transformLevel);
+        sortedColumns[column][rows[i]].setConfidence();
+        sortedColumns[column][rows[i]].setAlreadyConf();
       }
     }
   }
@@ -1085,20 +1079,20 @@ void Segment::determineConfidence()
   /* THRESHOLDS */
 
   //article length must be >= 4 if at least one article line exists
-  int numArticleThresh = 4; 
   int numWordsThresh = 8;
-  int heightThresh = 2400;
-  int gapThresh = 340;
+  int heightThresh = 1000; //was 2400
+  int gapThresh = 500; //was 340 
+  double areaThresh = 100.0;
 
   /* WEIGHT */
-  double weightConfArticle = 0.9;
   double weightConfWords = 0.002;
-  double weightTwoTitle = 0.2;
-  double weightGap = 0.5;
+  double weightTwoTitle = 0.9;
+  double weightGap = 0.2;
+  double weightArea = 0.3;
 
   //difference from threshold - every multiple of 50 equates to
-  //losing 0.5% in confidence
-  double weightConfHeight = 0.3;
+  //losing 0.3% in confidence
+  double weightConfHeight = 0.15;
 
   /* VARIABLES USED IN LOOP */
   int curArticle = 0;
@@ -1109,9 +1103,13 @@ void Segment::determineConfidence()
   int diffWords = 0;
   int diffHeight = 0;
   int diffGap = 0;
+  int diffWordArea = 0;
+  double curWordArea = 0;
 
   int twoTitle = 0;
   double finalConfDecrease = 0.0;
+
+  double commonArticleArea = commonArticleWordArea();
 
   //set all conf done to false
   for (int i = 0; i < sortedColumns.size(); i++)
@@ -1129,14 +1127,11 @@ void Segment::determineConfidence()
     //create a window of 5 consecutive lines
     for (int j = 0; j < sortedColumns[i].size(); j+=1) 
     {
-      /*
-      if (sortedColumns[i][j].isLine("ducers", -1))
-      {
-        cout << "GOT HERE CHARLIE" << '\n';
-      }
-      */
-
       rows.push_back(j);
+
+      //indicate the line sortedColumns[i][j] has reached top of window
+      sortedColumns[i][j].setReachedTop();
+      
       if ((j+1) < sortedColumns[i].size())
       {
         rows.push_back(j+1);
@@ -1158,11 +1153,20 @@ void Segment::determineConfidence()
       }
       */
 
-      //curArticle = numConsecArticleLines(i, rows);
       curWords = wordsInWindow(i, rows);
       curHeight = heightWindow(i, rows);
       twoTitle = titleArticleTitle(i, rows);
       curGap = maxGapWords(i, rows);
+      curWordArea = averageWordArea(i, rows);
+
+      if (abs(curWordArea - commonArticleArea) < areaThresh)
+      {
+        diffWordArea = 0;
+      }
+      else
+      {
+        diffWordArea = 1;
+      }
 
       /*
       if ((curArticle > 0) && (curArticle < 4))
@@ -1210,9 +1214,45 @@ void Segment::determineConfidence()
                           (weightConfWords * diffWords) + 
                           (weightConfHeight * diffHeight) + 
                           (weightGap * diffGap);
+                          //(weightArea * diffWordArea);
   
       setConfNonVisited((1.0 - finalConfDecrease), i, rows);
       rows.clear();
+    }
+  }
+}
+
+bool Segment::isContentSame(Textline& line1, Textline& line2)
+{
+  if ((line1.words.size()) != (line2.words.size()))
+  {
+    return false;
+  }
+
+  else
+  {
+    for (size_t i = 0; i < line1.words.size(); i++)
+    {
+      if ((line1.words[i].content).compare(line2.words[i].content) != 0)
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+}
+
+void Segment::setAllCopiesVisited(Textline& line)
+{
+  for (size_t i = 0; i < sortedColumns.size(); i++)
+  {
+    for (size_t j = 0; j < sortedColumns[i].size(); j++)
+    {
+      if (isContentSame(sortedColumns[i][j], line))
+      {
+        sortedColumns[i][j].setVisited();
+      }
     }
   }
 }
@@ -1339,6 +1379,7 @@ void Segment::printLines()
   }
 }
 
+
 /*
 void Segment::PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
     const cv::Scalar& color, int fontFace, double fontScale, int thickness = 1, 
@@ -1429,17 +1470,6 @@ void Segment::drawBlocks()
   int blockHeight = 0;
   int blockWidth = 0;
 
-  int ntopX = 0;
-  int ntopY = 0;
-  int nblockHeight = 0;
-  int nblockWidth = 0;
-
-  //cout << regions.size() << '\n';
-
-  double testValue = 100.0;
-
-  //cout << convertToXML_h(convertToImage_X(testValue)) << '\n';
-
   for (auto curBlock: regions)
   {
     topX = convertToXML_h(curBlock.getX());
@@ -1453,14 +1483,52 @@ void Segment::drawBlocks()
     Point rP2(rP1.x + (int)(Xdimension * (blockWidth/(double)pageWidth))
         , rP1.y + (int)(Ydimension * (blockHeight/(double)pageHeight)));
 
-    if (curBlock.getConfidence() == 0)
-    {
-      if (curBlock.getLabel())
-        rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
-      else
-        rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
-    }    
+    if (curBlock.getLabel())
+      rectangle(img, rP1, rP2, Scalar(0,0,255), 7);
+    else
+      rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
   }
+}
+
+void Segment::drawConfidenceBlocks()
+{
+  //ints because XML stores all parameters as integers
+  int topX = 0;
+  int topY = 0;
+  int blockHeight = 0;
+  int blockWidth = 0;
+
+  cv::Mat overlay;
+  img.copyTo(overlay);
+
+  for (auto curBlock: regions)
+  {
+    topX = convertToXML_h(curBlock.getX());
+    topY = convertToXML_v(curBlock.getY());
+    blockWidth = convertToXML_h(curBlock.getWidth());
+    blockHeight = convertToXML_v(curBlock.getHeight());
+
+    Point rP1((int)(Xdimension * (topX/(double)pageWidth)), 
+        (int)(Ydimension * (topY/(double)pageHeight)));
+
+    Point rP2(rP1.x + (int)(Xdimension * (blockWidth/(double)pageWidth))
+        , rP1.y + (int)(Ydimension * (blockHeight/(double)pageHeight)));
+*/
+    /*
+    * Color of all blocks will be red, and the color intensity
+    *  will be determined by confidence level
+    */
+/*
+    rectangle(overlay, rP1, rP2, 
+        Scalar(255,255,255*(curBlock.getConfidence())), -1);
+
+    rectangle(img, rP1, rP2, Scalar(255,0,0), 7);
+  }
+
+  double alpha = 0.3; //used for overlapping rectangles and text
+
+  //img = (alpha)*overlay + (1-alpha)*img
+  cv::addWeighted(overlay, alpha, img, 1-alpha, 0, img);
 }
 
 
@@ -1490,7 +1558,7 @@ void Segment::drawLines(bool orig)
 
       cout << sortedColumns[i][j].getConfidence() << '\n';
 
-      if ((sortedColumns[i][j].getConfidence()) < 0.9)
+      if ((sortedColumns[i][j].getConfidence()) < 0.7)
       {
         if (sortedColumns[i][j].getLabel())
         {
@@ -1555,6 +1623,7 @@ void Segment::drawWords(bool orig)
   }
 }
 
+
 void Segment::writeImage(char* filename)
 {
   vector<int> compression_params;
@@ -1591,7 +1660,7 @@ void Segment::writeJSON(char* filename, char* outDir)
   string content = "";
 
   //test using each line as its own block
-  
+
   /*
   int count = 0;
 

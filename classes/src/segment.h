@@ -4,12 +4,12 @@
 #include "textLine.h"
 #include "block.h"
 #include <vector>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/core/core.hpp>
+//#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
-using namespace cv;
+//using namespace cv;
 
 class Segment
 {
@@ -26,6 +26,7 @@ class Segment
     vector<Block> generate_invalid_zones(const string& json_file);
     void splitByColumn();
     void setDim(char* dimXcoord, char* dimYcoord);
+
     //CONSTRUCTOR
     /* This will use rapidxml to read through the document and:
      * 1) Construct all Textline objects and place in vector "lines"
@@ -39,9 +40,11 @@ class Segment
      * to work correctly, these attributes need to be normalized.
      */
 
-    void segmentWithColumns();
+    void removeLargeWords();
 
-    void segment();
+    bool removeLine(Textline& testLine);
+
+    void segmentWithColumns();
 
     void groupIntoBlocks();
 
@@ -51,12 +54,23 @@ class Segment
     int heightWindow(int column, vector<int>& rows);
     int titleArticleTitle(int column, vector<int>& rows);
     int maxGapWords(int column, vector<int>& rows);
-    //int numConsecArticleLines(int column, vector<int>& rows);
+
+    double commonArticleWordArea();
+    double averageWordArea(int column, vector<int>& rows);
+
     void setConfNonVisited(double level, int column, vector<int>& rows);
 
     void determineConfidence();
 
     /* FUNCTIONS FOR DETERMINING CONFIDENCE */
+
+    
+    /* Sets the visited attribute for all Textline objects 
+     * that have the same content as "line"
+     */
+
+    bool isContentSame(Textline& line1, Textline& line2);
+    void setAllCopiesVisited(Textline& line);
 
     double xmlHeight(Textline& line);
     double xmlWidth(Textline& line);
@@ -76,7 +90,7 @@ class Segment
 
     void printLines();
 
-    
+    /*
     void PutText(cv::Mat& img, const std::string& text, const cv::Rect& roi, 
         const cv::Scalar& color, int fontFace, double fontScale, 
         int thickness, int lineType);
@@ -85,11 +99,13 @@ class Segment
 
     void drawBlocks();
 
+    void drawConfidenceBlocks();
+
     void drawLines(bool orig);
     void drawWords(bool orig);
     
     void writeImage(char* filename);
-    
+    */
       
     void writeJSON(char* filename, char* outDir);
 
